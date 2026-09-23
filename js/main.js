@@ -1,5 +1,9 @@
-import CONFIG from "./config.js";
+import BASE_CONFIG from "./config.js";
 import Lenis from "./vendor/lenis.mjs";
+
+// modo edición (temporal)
+const editor = new URLSearchParams(location.search).has("editar") ? await import("./editor.js") : null;
+const CONFIG = editor ? await editor.loadDraft(BASE_CONFIG) : BASE_CONFIG;
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -449,6 +453,8 @@ function setupSeal() {
     await wait(2100);
     intro.remove();
   }
+
+  return openGift;
 }
 
 /* ---------- Counter ---------- */
@@ -785,5 +791,6 @@ setupLetter();
 setupSurprises();
 setupReveal();
 setupParallax();
-setupSeal();
+const openGift = setupSeal();
 setupGate();
+editor?.mount({ openGift, lenis }); // modo edición (temporal)
