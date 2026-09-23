@@ -31,9 +31,11 @@ Sube un archivo `.mp3` como `assets/musica.mp3`. Si no existe, el botón de mús
 
 ## Modo edición (temporal)
 
-Abre la página con `?editar` al final y toca **✎ Editar**. *Guardar* sube los cambios (textos, fotos, canciones, música) a Firestore; sin `?editar` la página muestra solo `js/config.js`. En *Canciones* basta pegar el link de Spotify para que se llenen el nombre y la portada.
+Abre la página con `?editar` al final y toca **✎ Editar**. Al tocar **Publicar**, los cambios (textos, fotos, canciones, música) se suben a Firestore y la página normal los muestra en cuanto se recarga, sin esperar a Vercel. En *Canciones* basta pegar el link de Spotify para que se llenen el nombre y la portada.
 
-Al terminar se pasa lo guardado a `js/config.js` + `assets/` y se borran `js/editor.js`, `css/editor.css` y las líneas marcadas `modo edición` en `js/main.js`.
+La página normal lee lo publicado en Firestore (`edicion/contenido`); si Firestore no responde en 4 s, usa `js/config.js` como respaldo.
+
+Para quitar el editor al terminar: borrar `js/editor.js`, `css/editor.css` y las líneas marcadas `modo edición` en `js/main.js`.
 
 ## Firebase
 

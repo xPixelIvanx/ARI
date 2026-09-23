@@ -1,4 +1,4 @@
-// Todo el contenido de la página vive aquí. Editado con el modo edición (?editar).
+// Respaldo: la página usa lo publicado en Firebase y, si no responde, este contenido.
 
 export default {
   "herName": "Ari",
@@ -6,16 +6,15 @@ export default {
   "fromName": "Iván",
   "startDate": "2026-06-09T13:00:00",
   "introLines": [
-    "Hola, Ari.",
-    "Hice algo solo para ti.",
-    "Pero antes…"
+    "Hola, Ari. Te amo mucho ❤️",
+    "Hice algo para ti y solo para ti, porque eres muy importante para mi"
   ],
-  "heroSubtitle": "Un pequeño rincón de internet que existe solo para ti.",
+  "heroSubtitle": "Una pequeña representación de lo que siento por ti.",
   "letter": {
-    "date": "Para leer despacio",
+    "date": "Te amo",
     "greeting": "Ari,",
     "paragraphs": [
-      "No soy muy bueno diciendo estas cosas en voz alta, así que decidí construirlas.",
+      "Maybe ya no tiene el mismo impacto decirte las cosas así que decidí mejor hacer algo a manita para ti.",
       "Esta página es pequeña comparada con lo que siento, pero cada parte la hice pensando en ti: en tu risa, en cómo me miras cuando crees que no me doy cuenta, en lo fácil que es estar contigo.",
       "Aquí vas a encontrar algunos de nuestros recuerdos, un par de sorpresas y cosas que quiero que tengas guardadas para cuando las necesites.",
       "Gracias por elegirme todos los días. Yo también te elijo."
@@ -102,14 +101,15 @@ export default {
     }
   ],
   "final": {
-    "title": "Una última cosa",
-    "button": "No presiones este botón",
+    "title": "Ah y porfavor",
+    "button": "NO PRESIONES ESTE BOTÓN",
     "lines": [
       "Sabía que lo ibas a presionar.",
-      "Por eso te quiero."
+      "eres una chismosa ",
+      "Por eso te amo. "
     ]
   },
-  "secret": "Encontraste el secreto. Tu premio: una cita, cuando quieras y donde quieras. Canjeable con captura de pantalla.",
+  "secret": "Encontraste el secreto. Tu premio: una cita donde tú quieras y cuando tú quieras y con final feliz ;), canjeable con ss.",
   "music": {
     "src": "assets/musica.mp3",
     "volume": 0.6

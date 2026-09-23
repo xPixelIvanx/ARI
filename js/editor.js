@@ -1,9 +1,9 @@
 // Modo edición temporal: se activa con ?editar en la URL.
-// Guarda el contenido en Firestore; al terminar se pasa a config.js y se borra este archivo,
-// css/editor.css y las líneas marcadas "modo edición" en main.js.
+// "Publicar" sube el contenido a Firestore y la página normal lo lee al cargar.
+// Para quitarlo: borrar este archivo, css/editor.css y las líneas marcadas "modo edición" en main.js.
 
-const FIRESTORE = "https://firestore.googleapis.com/v1/projects/ariii-c43e3/databases/(default)/documents";
-const API_KEY = "AIzaSyC8e2W2bL-a4VtARDVhq0z7HTOVYPabe6A";
+import { CONTENT_DOC, NoDatabase, aliasMedia, fetchPublished, files, isCloud, isLocal, putDoc, resolveMedia } from "./content.js";
+
 const CONSOLE_URL = "https://console.firebase.google.com/project/ariii-c43e3/firestore";
 // Firestore limita cada documento a 1 MiB; los archivos se guardan en trozos.
 const CHUNK = 900_000;
@@ -32,98 +32,6 @@ const store = {
     } catch {}
   },
 };
-
-/* ---------- Firestore (REST) ---------- */
-
-class NoDatabase extends Error {}
-
-async function cloud(path, { method = "GET", body, timeout = 30000 } = {}) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeout);
-  let res;
-  try {
-    res = await fetch(`${FIRESTORE}/${path}?key=${API_KEY}`, {
-      method,
-      cache: "no-store",
-      signal: ctrl.signal,
-      headers: body ? { "Content-Type": "application/json" } : {},
-      body: body ? JSON.stringify(body) : undefined,
-    });
-  } catch {
-    throw new Error("No hay conexión con Firebase. Revisa tu internet.");
-  } finally {
-    clearTimeout(timer);
-  }
-  if (res.ok) return res.json();
-  const msg = (await res.json().catch(() => ({})))?.error?.message || "";
-  if (res.status === 404 && /database .* does not exist/i.test(msg)) throw new NoDatabase();
-  if (res.status === 404) return null;
-  if (res.status === 403)
-    throw new Error("Firebase no dejó guardar. Revisa que Firestore esté en “modo de prueba” (dura 30 días).");
-  throw new Error(`Firebase respondió con un error (${res.status}). Intenta de nuevo.`);
-}
-
-const putDoc = (path, fields) => cloud(path, { method: "PATCH", body: { fields } });
-
-/* ---------- Archivos (IndexedDB como caché local) ---------- */
-
-let dbPromise;
-function db() {
-  dbPromise ??= new Promise((resolve, reject) => {
-    const req = indexedDB.open("ari-editor", 1);
-    req.onupgradeneeded = () => req.result.createObjectStore("files");
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-  return dbPromise;
-}
-
-async function tx(mode, fn) {
-  const d = await db();
-  return new Promise((resolve, reject) => {
-    const t = d.transaction("files", mode);
-    const req = fn(t.objectStore("files"));
-    t.oncomplete = () => resolve(req.result);
-    t.onerror = () => reject(t.error);
-    t.onabort = () => reject(t.error);
-  });
-}
-
-const files = {
-  get: (id) => tx("readonly", (s) => s.get(id)),
-  put: (id, rec) => tx("readwrite", (s) => s.put(rec, id)),
-  del: (id) => tx("readwrite", (s) => s.delete(id)),
-};
-
-// "idb:<id>" = archivo solo en este dispositivo; "fb:<id>:<trozos>:<ext>" = guardado en Firestore.
-const isLocal = (src) => typeof src === "string" && src.startsWith("idb:");
-const isCloud = (src) => typeof src === "string" && src.startsWith("fb:");
-const urls = new Map();
-
-const mimeFor = (ext) => (ext === "jpg" ? "image/jpeg" : ext === "mp3" ? "audio/mpeg" : `audio/${ext}`);
-
-async function download(src) {
-  const [, id, n, ext] = src.split(":");
-  const parts = await Promise.all(Array.from({ length: Number(n) }, (_, i) => cloud(`archivos/${id}-${i}`)));
-  if (parts.some((p) => !p)) throw new Error("missing");
-  const b64 = parts.map((p) => p.fields.data.stringValue).join("");
-  const blob = await (await fetch(`data:${mimeFor(ext)};base64,${b64}`)).blob();
-  return { blob, ext };
-}
-
-async function urlFor(src) {
-  if (!src) return "";
-  if (urls.has(src)) return urls.get(src);
-  if (!isLocal(src) && !isCloud(src)) return src;
-  let rec = await files.get(src).catch(() => null);
-  if (!rec && isCloud(src)) {
-    rec = await download(src).catch(() => null);
-    if (rec) files.put(src, rec).catch(() => {});
-  }
-  const url = rec ? URL.createObjectURL(rec.blob) : "";
-  urls.set(src, url);
-  return url;
-}
 
 async function saveLocal(blob, ext) {
   const id = `idb:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -180,9 +88,9 @@ export async function loadDraft(base) {
   let data = store.get(KEYS.draft, null);
   if (!isDirty()) {
     try {
-      const doc = await cloud("edicion/contenido", { timeout: 8000 });
-      if (doc) {
-        data = JSON.parse(doc.fields.json.stringValue);
+      const published = await fetchPublished(8000);
+      if (published) {
+        data = published;
         store.set(KEYS.draft, data);
       }
     } catch (err) {
@@ -190,13 +98,7 @@ export async function loadDraft(base) {
     }
   }
   draft = { ...structuredClone(base), ...(data || {}) };
-  const view = structuredClone(draft);
-  await Promise.all([
-    ...view.memories.map(async (m) => (m.src = await urlFor(m.src))),
-    ...view.songs.map(async (s) => (s.cover = await urlFor(s.cover))),
-    urlFor(view.music.src).then((u) => (view.music.src = u)),
-  ]);
-  return view;
+  return structuredClone(draft);
 }
 
 let saveTimer = 0;
@@ -206,7 +108,7 @@ function saveNow() {
 }
 function changed() {
   store.set(KEYS.dirty, true);
-  status("Tienes cambios sin guardar.");
+  status("Tienes cambios sin publicar.");
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveNow, 300);
 }
@@ -316,7 +218,7 @@ const setupBox = h(
     h("li", {}, "Abre Firestore en la consola de Firebase con el botón de abajo."),
     h("li", {}, "Toca “Crear base de datos”."),
     h("li", {}, "Elige “Comenzar en modo de prueba” y cualquier ubicación."),
-    h("li", {}, "Vuelve aquí y toca “Guardar”.")
+    h("li", {}, "Vuelve aquí y toca “Publicar”.")
   ),
   h("a", { class: "ed-btn ed-btn--sm", href: CONSOLE_URL, target: "_blank", rel: "noopener" }, "Abrir Firestore ↗")
 );
@@ -327,7 +229,7 @@ function photoItem(m) {
   const thumb = h("div", { class: "ed-thumb" });
   const showThumb = async () => {
     thumb.style.aspectRatio = m.ratio || "4/5";
-    const url = await urlFor(m.src);
+    const url = await resolveMedia(m.src);
     thumb.replaceChildren(url ? h("img", { src: url, alt: "" }) : h("span", {}, "Sin foto"));
   };
   showThumb();
@@ -379,7 +281,7 @@ async function spotifyInfo(link) {
 function songItem(s) {
   const thumb = h("div", { class: "ed-thumb ed-thumb--square" });
   const showThumb = async () => {
-    const url = await urlFor(s.cover);
+    const url = await resolveMedia(s.cover);
     thumb.replaceChildren(url ? h("img", { src: url, alt: "" }) : h("span", {}, "Sin portada"));
   };
   showThumb();
@@ -474,9 +376,9 @@ function musicSection() {
   const describe = () => {
     const src = draft.music.src;
     info.textContent = isLocal(src)
-      ? "Canción nueva (sin guardar todavía)."
+      ? "Canción nueva (sin publicar todavía)."
       : isCloud(src)
-        ? "Canción guardada ✓"
+        ? "Canción publicada ✓"
         : `Archivo actual: ${src || "ninguno"}`;
   };
   describe();
@@ -534,13 +436,13 @@ function settingsSection() {
         type: "button",
         class: "ed-btn ed-btn--danger ed-btn--sm",
         onclick: () => {
-          if (!confirm("¿Descartar los cambios que no has guardado?")) return;
+          if (!confirm("¿Descartar los cambios que no has publicado?")) return;
           store.del(KEYS.draft);
           store.del(KEYS.dirty);
           location.reload();
         },
       },
-      "Descartar cambios sin guardar"
+      "Descartar cambios sin publicar"
     )
   );
 }
@@ -627,9 +529,10 @@ function buildSections() {
   ];
 }
 
-/* ---------- Guardar en Firebase ---------- */
+/* ---------- Publicar en Firebase ---------- */
 
-async function save(buttons, rebuild) {
+async function publish(buttons, rebuild) {
+  if (!confirm("¿Publicar los cambios? Se verán de inmediato en la página normal.")) return;
   saveNow();
   buttons.forEach((b) => (b.disabled = true));
   try {
@@ -654,13 +557,13 @@ async function save(buttons, rebuild) {
       }
       const cloudSrc = `fb:${id}:${n}:${rec.ext}`;
       await files.put(cloudSrc, rec);
-      if (urls.has(local)) urls.set(cloudSrc, urls.get(local));
+      aliasMedia(local, cloudSrc);
       uploaded.push(local);
       o[key] = cloudSrc;
     }
 
-    status("Guardando…");
-    await putDoc("edicion/contenido", {
+    status("Publicando…");
+    await putDoc(CONTENT_DOC, {
       json: { stringValue: JSON.stringify(out) },
       actualizado: { timestampValue: new Date().toISOString() },
     });
@@ -671,14 +574,14 @@ async function save(buttons, rebuild) {
     store.set(KEYS.dirty, false);
     setupBox.hidden = true;
     rebuild();
-    status("Guardado ✓ Puedes seguir editando cuando quieras, desde cualquier dispositivo.", "ok");
+    status("¡Publicado! ✓ Ya se ve en la página normal.", "ok");
   } catch (err) {
     if (err instanceof NoDatabase) {
       setupBox.hidden = false;
       setupBox.scrollIntoView({ block: "nearest" });
-      status("Todavía no se puede guardar: falta crear la base de datos (mira arriba).", "error");
+      status("Todavía no se puede publicar: falta crear la base de datos (mira arriba).", "error");
     } else {
-      status(err.message || "Algo salió mal al guardar.", "error");
+      status(err.message || "Algo salió mal al publicar.", "error");
     }
   } finally {
     buttons.forEach((b) => (b.disabled = false));
@@ -698,21 +601,27 @@ export function mount({ openGift, lenis }) {
   statusEl = h("p", { class: "ed-status", role: "status", "aria-live": "polite" });
   if (loadError instanceof NoDatabase) {
     setupBox.hidden = false;
-    status("Puedes editar y previsualizar; para guardar falta un paso (arriba).");
+    status("Puedes editar y previsualizar; para publicar falta un paso (arriba).");
   } else if (loadError) {
-    status("No se pudo cargar lo guardado en Firebase; estás viendo el borrador de este dispositivo.", "error");
+    status("No se pudo cargar lo publicado; estás viendo el borrador de este dispositivo.", "error");
   } else {
-    status(isDirty() ? "Tienes cambios sin guardar." : "Todo guardado.");
+    status(isDirty() ? "Tienes cambios sin publicar." : "Todo publicado.");
   }
 
   const preview = h("button", { type: "button", class: "ed-btn ed-btn--ghost" }, "Vista previa");
-  const saveBtn = h("button", { type: "button", class: "ed-btn" }, "Guardar");
+  const publishBtn = h("button", { type: "button", class: "ed-btn" }, "Publicar");
   preview.addEventListener("click", () => {
     saveNow();
     store.set(KEYS.scroll, window.scrollY, sessionStorage);
     location.reload();
   });
-  saveBtn.addEventListener("click", () => save([preview, saveBtn], rebuild));
+  publishBtn.addEventListener("click", () => publish([preview, publishBtn], rebuild));
+
+  const live = h(
+    "a",
+    { class: "ed-live", href: location.pathname, target: "_blank", rel: "noopener" },
+    "Ver la página como la ve ella ↗"
+  );
 
   const panel = h(
     "aside",
@@ -724,7 +633,7 @@ export function mount({ openGift, lenis }) {
       h("button", { type: "button", class: "ed-close", "aria-label": "Cerrar", onclick: () => toggle(false) }, "✕")
     ),
     body,
-    h("footer", { class: "ed-foot" }, statusEl, h("div", { class: "ed-actions" }, preview, saveBtn))
+    h("footer", { class: "ed-foot" }, statusEl, h("div", { class: "ed-actions" }, preview, publishBtn), live)
   );
 
   const fab = h("button", { type: "button", class: "ed-fab", onclick: () => toggle(true) }, "✎ Editar");

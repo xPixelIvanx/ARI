@@ -1,9 +1,10 @@
 import BASE_CONFIG from "./config.js";
+import { loadContent, resolveMedia } from "./content.js";
 import Lenis from "./vendor/lenis.mjs";
 
 // modo edición (temporal)
 const editor = new URLSearchParams(location.search).has("editar") ? await import("./editor.js") : null;
-const CONFIG = editor ? await editor.loadDraft(BASE_CONFIG) : BASE_CONFIG;
+const CONFIG = editor ? await editor.loadDraft(BASE_CONFIG) : await loadContent(BASE_CONFIG);
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -17,6 +18,12 @@ lenis?.stop();
 const firebase = import("./firebase.js").catch(() => null);
 const track = (name, params) =>
   firebase.then((m) => m && m.track(name, params)).catch(() => {});
+
+function setSrc(media, src) {
+  resolveMedia(src).then((url) => {
+    if (url) media.src = url;
+  });
+}
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -177,9 +184,12 @@ const petals = (() => {
 const music = (() => {
   const btn = $("#music");
   const audio = new Audio();
-  audio.src = CONFIG.music.src;
   audio.loop = true;
   audio.preload = "none";
+  resolveMedia(CONFIG.music.src).then((url) => {
+    if (url) audio.src = url;
+    else btn.hidden = true;
+  });
 
   let unlocked = false;
   let wantPlay = false;
@@ -559,7 +569,7 @@ const lightbox = (() => {
     media.replaceChildren();
     if (m.src) {
       const img = el("img");
-      img.src = m.src;
+      setSrc(img, m.src);
       img.alt = m.caption;
       img.decoding = "async";
       media.append(img);
@@ -633,7 +643,7 @@ function renderGallery() {
     if (m.src) {
       media = el("button", "memory__media");
       const img = el("img");
-      img.src = m.src;
+      setSrc(img, m.src);
       img.alt = m.caption;
       img.loading = "lazy";
       img.decoding = "async";
@@ -660,7 +670,7 @@ function renderGallery() {
 function coverArt(song, i, className) {
   if (song.cover) {
     const img = el("img", className);
-    img.src = song.cover;
+    setSrc(img, song.cover);
     img.alt = "";
     img.loading = "lazy";
     img.decoding = "async";
