@@ -1,9 +1,13 @@
 import CONFIG from "./config.js";
+import Lenis from "./vendor/lenis.mjs";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const lenis = reduceMotion ? null : new Lenis({ autoRaf: true, anchors: true, lerp: 0.085 });
+lenis?.stop();
 
 // Firebase se carga en segundo plano para no retrasar la página.
 const firebase = import("./firebase.js").catch(() => null);
@@ -28,11 +32,17 @@ const petals = (() => {
   let w = 0;
   let h = 0;
   let raf = 0;
+  let last = 0;
 
+  // En móvil la barra del navegador cambia innerHeight al hacer scroll;
+  // solo redimensionar si cambia el ancho o crece el alto evita saltos.
   function resize() {
+    const nw = window.innerWidth;
+    const nh = window.innerHeight;
+    if (nw === w && nh <= h) return;
+    h = nw === w ? Math.max(h, nh) : nh;
+    w = nw;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    w = window.innerWidth;
-    h = window.innerHeight;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     canvas.style.width = w + "px";
@@ -71,15 +81,19 @@ const petals = (() => {
     ctx.restore();
   }
 
-  function frame() {
+  function frame(t) {
+    // f = 1 a 60 fps; escala el movimiento para que sea igual a cualquier Hz.
+    const f = last ? Math.min(t - last, 50) / (1000 / 60) : 1;
+    last = t;
+    const drag = Math.pow(0.985, f);
     ctx.clearRect(0, 0, w, h);
 
     for (const p of ambient) {
-      p.sway += 0.012;
-      p.flip += 0.02;
-      p.x += p.vx + Math.sin(p.sway) * 0.35;
-      p.y += p.vy;
-      p.rot += p.vr;
+      p.sway += 0.012 * f;
+      p.flip += 0.02 * f;
+      p.x += (p.vx + Math.sin(p.sway) * 0.35) * f;
+      p.y += p.vy * f;
+      p.rot += p.vr * f;
       if (p.y > h + 20) Object.assign(p, makePetal(), { y: -20 });
       if (p.x < -20) p.x = w + 20;
       if (p.x > w + 20) p.x = -20;
@@ -88,13 +102,13 @@ const petals = (() => {
 
     for (let i = bursts.length - 1; i >= 0; i--) {
       const p = bursts[i];
-      p.vx *= 0.985;
-      p.vy = p.vy * 0.985 + 0.09;
-      p.x += p.vx;
-      p.y += p.vy;
-      p.rot += p.vr;
-      p.flip += 0.08;
-      p.life -= 1;
+      p.vx *= drag;
+      p.vy = p.vy * drag + 0.09 * f;
+      p.x += p.vx * f;
+      p.y += p.vy * f;
+      p.rot += p.vr * f;
+      p.flip += 0.08 * f;
+      p.life -= f;
       if (p.life <= 0) {
         bursts.splice(i, 1);
         continue;
@@ -106,7 +120,10 @@ const petals = (() => {
   }
 
   function start() {
-    if (!raf && !document.hidden) raf = requestAnimationFrame(frame);
+    if (!raf && !document.hidden) {
+      last = 0;
+      raf = requestAnimationFrame(frame);
+    }
   }
 
   function startAmbient() {
@@ -234,6 +251,37 @@ const music = (() => {
 
 /* ---------- Content ---------- */
 
+function splitChars(node) {
+  const text = node.textContent;
+  node.setAttribute("aria-label", text);
+  node.replaceChildren(
+    ...[...text].map((ch, i) => {
+      const outer = el("span", "char");
+      outer.setAttribute("aria-hidden", "true");
+      const inner = el("span", "char__inner", ch === " " ? " " : ch);
+      inner.style.setProperty("--c", i);
+      outer.append(inner);
+      return outer;
+    })
+  );
+}
+
+function splitWords(node) {
+  const text = node.textContent.trim();
+  node.setAttribute("aria-label", text);
+  node.classList.add("split");
+  node.replaceChildren();
+  text.split(/\s+/).forEach((word, i) => {
+    if (i) node.append(" ");
+    const outer = el("span", "word");
+    outer.setAttribute("aria-hidden", "true");
+    const inner = el("span", "word__inner", word);
+    inner.style.setProperty("--w", i);
+    outer.append(inner);
+    node.append(outer);
+  });
+}
+
 function renderContent() {
   $$("[data-her-name]").forEach((n) => (n.textContent = CONFIG.herName));
   $$("[data-from-name]").forEach((n) => (n.textContent = CONFIG.fromName));
@@ -266,20 +314,42 @@ function renderContent() {
     line.style.setProperty("--i", i);
     reveal.append(line);
   });
+
+  splitChars($("#hero-title"));
+  $$(".section__title").forEach(splitWords);
 }
 
 /* ---------- Intro ---------- */
 
+function setupGate() {
+  const gate = $("#gate");
+  $("#gate-btn").addEventListener(
+    "click",
+    async () => {
+      music.unlock();
+      gate.classList.add("is-gone");
+      track("intro_started");
+      await wait(reduceMotion ? 100 : 1500);
+      gate.remove();
+      playIntro();
+    },
+    { once: true }
+  );
+}
+
 async function playIntro() {
   const lines = $$(".intro__line");
-  await wait(700);
   for (let i = 0; i < lines.length; i++) {
-    lines[i].classList.add("is-visible");
-    await wait(reduceMotion ? 900 : 2000);
-    if (i < lines.length - 1) {
-      lines[i].classList.remove("is-visible");
-      lines[i].classList.add("is-gone");
-      await wait(reduceMotion ? 100 : 600);
+    const line = lines[i];
+    const isLast = i === lines.length - 1;
+    line.classList.add("is-visible");
+    // Tiempo de lectura: aparece (~1.6 s) + un tiempo según el largo de la frase.
+    const readMs = isLast ? 2400 : 1600 + 2200 + line.textContent.length * 60;
+    await wait(reduceMotion ? 2000 : readMs);
+    if (!isLast) {
+      line.classList.remove("is-visible");
+      line.classList.add("is-gone");
+      await wait(reduceMotion ? 200 : 1500);
     }
   }
   $("#intro").classList.add("show-seal");
@@ -368,13 +438,15 @@ function setupSeal() {
     document.body.classList.remove("is-locked");
     document.body.classList.add("is-open");
     $("#site").inert = false;
+    lenis?.start();
 
     music.play();
     petals.burst(window.innerWidth / 2, window.innerHeight / 2, 60);
-    setTimeout(() => petals.startAmbient(), 1200);
+    setTimeout(() => petals.startAmbient(), 1400);
+    setTimeout(countUp, 1500);
     track("gift_opened");
 
-    await wait(1700);
+    await wait(2100);
     intro.remove();
   }
 }
@@ -389,6 +461,9 @@ function setupCounter() {
   const secs = $("#c-secs");
   const pad = (n) => String(n).padStart(2, "0");
 
+  // k va de 0 a 1 durante la animación de conteo inicial.
+  let k = 0;
+
   const update = () => {
     let s = Math.max(0, Math.floor((Date.now() - start) / 1000));
     const d = Math.floor(s / 86400);
@@ -397,14 +472,30 @@ function setupCounter() {
     s -= h * 3600;
     const m = Math.floor(s / 60);
     s -= m * 60;
-    days.textContent = d.toLocaleString("es");
-    hours.textContent = pad(h);
-    mins.textContent = pad(m);
-    secs.textContent = pad(s);
+    const e = 1 - Math.pow(1 - k, 4);
+    days.textContent = Math.round(d * e).toLocaleString("es");
+    hours.textContent = pad(Math.round(h * e));
+    mins.textContent = pad(Math.round(m * e));
+    secs.textContent = pad(Math.round(s * e));
   };
 
   update();
   setInterval(update, 1000);
+
+  return function countUp() {
+    if (reduceMotion) {
+      k = 1;
+      update();
+      return;
+    }
+    const t0 = performance.now();
+    const step = (t) => {
+      k = Math.min(1, (t - t0) / 2600);
+      update();
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
 }
 
 /* ---------- Letter ---------- */
@@ -421,9 +512,9 @@ function setupLetter() {
     envelope.setAttribute("aria-disabled", "true");
     track("letter_opened");
 
-    await wait(reduceMotion ? 200 : 1600);
+    await wait(reduceMotion ? 200 : 2300);
     wrap.classList.add("is-leaving");
-    await wait(reduceMotion ? 0 : 500);
+    await wait(reduceMotion ? 0 : 800);
     wrap.hidden = true;
     letter.hidden = false;
     requestAnimationFrame(() => requestAnimationFrame(() => letter.classList.add("is-visible")));
@@ -473,6 +564,15 @@ const lightbox = (() => {
     }
     caption.textContent = m.caption;
     date.textContent = m.date;
+    if (!reduceMotion) {
+      media.animate(
+        [
+          { opacity: 0, transform: "scale(0.97)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 700, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }
+      );
+    }
   }
 
   function open(i) {
@@ -481,15 +581,17 @@ const lightbox = (() => {
     root.hidden = false;
     requestAnimationFrame(() => root.classList.add("is-open"));
     document.body.classList.add("no-scroll");
-    $("#lb-close").focus();
+    lenis?.stop();
+    $("#lb-close").focus({ preventScroll: true });
     track("memory_viewed", { index: i });
   }
 
   function close() {
     root.classList.remove("is-open");
     document.body.classList.remove("no-scroll");
-    setTimeout(() => (root.hidden = true), 350);
-    lastFocus?.focus();
+    lenis?.start();
+    setTimeout(() => (root.hidden = true), 400);
+    lastFocus?.focus({ preventScroll: true });
   }
 
   $("#lb-close").addEventListener("click", close);
@@ -645,6 +747,31 @@ function setupReveal() {
   items.forEach((n) => io.observe(n));
 }
 
+// El contenido del inicio sube más lento que el scroll y se desvanece.
+function setupParallax() {
+  if (reduceMotion) return;
+  const inner = $("#hero-inner");
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const vh = window.innerHeight;
+    const y = Math.min(window.scrollY, vh);
+    const k = y / vh;
+    inner.style.transform = `translate3d(0, ${(y * 0.35).toFixed(2)}px, 0)`;
+    inner.style.opacity = String(Math.max(0, 1 - k * 1.25).toFixed(3));
+  };
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    },
+    { passive: true }
+  );
+}
+
 /* ---------- Init ---------- */
 
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
@@ -653,9 +780,10 @@ window.scrollTo(0, 0);
 renderContent();
 renderGallery();
 renderCards();
-setupCounter();
+const countUp = setupCounter();
 setupLetter();
 setupSurprises();
 setupReveal();
+setupParallax();
 setupSeal();
-playIntro();
+setupGate();

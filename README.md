@@ -4,7 +4,7 @@ Página-regalo hecha en HTML/CSS/JS puro (sin frameworks, carga rápido), conect
 
 ## Qué tiene
 
-1. **Intro misteriosa**: frases que aparecen una por una y un sello de lacre que hay que *mantener presionado* para abrir el regalo. Al abrirse, se corre la cortina, caen pétalos y empieza la música.
+1. **Intro misteriosa**: nada arranca hasta que ella toca "Toca para comenzar". Luego aparecen las frases una por una (con tiempo para leerlas) y un sello de lacre que hay que *mantener presionado* para abrir el regalo. Al abrirse, se corre la cortina, caen pétalos y empieza la música.
 2. **Hero** con su nombre y un contador en vivo de cuánto tiempo llevan juntos.
 3. **Carta**: un sobre animado que se abre y revela la carta.
 4. **Recuerdos**: galería de fotos con visor a pantalla completa (se puede deslizar en el celular).
@@ -12,6 +12,7 @@ Página-regalo hecha en HTML/CSS/JS puro (sin frameworks, carga rápido), conect
 6. **Sorpresa final**: un botón de "no presiones este botón".
 7. **Secretos**: el ✦ del pie de página esconde un mensaje, y tocar su nombre 3 veces lanza pétalos.
 8. **Música de fondo** con botón flotante para pausar.
+9. **Animaciones suaves**: scroll con inercia ([Lenis](https://github.com/darkroomengineering/lenis), incluido en `js/vendor/`, licencia MIT), títulos que aparecen palabra por palabra, fotos que se revelan, parallax en el inicio y contador que sube desde cero.
 
 ## Cómo personalizarla
 

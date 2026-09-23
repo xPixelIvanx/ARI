@@ -15,6 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="modulepreload" href="js/config.js" />
+  <link rel="modulepreload" href="js/vendor/lenis.mjs" />
   <script type="module" src="js/main.js"></script>
 </head>
 <body class="is-locked">
@@ -27,6 +29,15 @@
     <div class="intro__panel intro__panel--bottom"></div>
     <div class="intro__content">
       <p class="intro__meta intro__meta--top">Privado · Solo para <span data-her-name></span></p>
+
+      <div class="gate" id="gate">
+        <p class="gate__kicker">Hay algo esperándote.</p>
+        <button class="gate__btn" id="gate-btn" type="button">
+          <span class="gate__dot" aria-hidden="true"></span>
+          <span>Toca para comenzar</span>
+        </button>
+      </div>
+
       <div class="intro__lines" id="intro-lines" aria-live="polite"></div>
       <button class="seal" id="seal" type="button" aria-label="Mantén presionado para abrir">
         <svg class="seal__ring" viewBox="0 0 120 120" aria-hidden="true">
@@ -43,8 +54,9 @@
   <main id="site" inert>
     <!-- Hero -->
     <header class="hero">
+      <div class="hero__inner" id="hero-inner">
       <p class="eyebrow h-anim" style="--i:0">Un regalo para</p>
-      <h1 class="hero__title h-anim" id="hero-title" style="--i:1"><span data-her-name></span></h1>
+      <h1 class="hero__title" id="hero-title" data-her-name></h1>
       <p class="hero__subtitle h-anim" id="hero-subtitle" style="--i:2"></p>
 
       <div class="counter h-anim" style="--i:3">
@@ -55,6 +67,7 @@
           <div class="counter__unit"><span class="counter__num" id="c-mins">00</span><span class="counter__txt">min</span></div>
           <div class="counter__unit"><span class="counter__num" id="c-secs">00</span><span class="counter__txt">seg</span></div>
         </div>
+      </div>
       </div>
 
       <a class="scroll-cue h-anim" href="#carta" style="--i:4">Desliza</a>
