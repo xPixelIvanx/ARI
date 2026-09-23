@@ -220,6 +220,20 @@
   cursor: pointer;
 }
 .ed-btn:disabled { opacity: 0.5; cursor: progress; }
+a.ed-btn { text-decoration: none; }
+
+.ed-setup {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 4px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--blush-100);
+  border: 1px solid var(--pink-300);
+  font-size: 14px;
+}
+.ed-setup__title { margin: 0; font-weight: 600; color: var(--rose-700); }
+.ed-setup ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 .ed-btn--ghost {
   background: var(--white);
   color: var(--ink);

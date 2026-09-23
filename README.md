@@ -32,11 +32,12 @@ Sube un archivo `.mp3` como `assets/musica.mp3`. Si no existe, el botón de mús
 
 Abre la página con `?editar` al final (ej. `https://tu-sitio.vercel.app/?editar`). Aparece un botón **✎ Editar** para cambiar textos, fecha del contador, fotos, tarjetas, música, etc.
 
-- Los cambios se guardan como borrador **solo en ese dispositivo**; *Vista previa* recarga la página con ellos.
-- *Publicar* los sube a GitHub (necesita un token de GitHub, instrucciones dentro del panel) y Vercel actualiza la página en ~1 minuto.
-- Sin `?editar`, la página muestra solo lo publicado.
+- *Vista previa* recarga la página con los cambios.
+- *Guardar* los sube a **Firestore** (textos, fotos y música), así se pueden seguir editando desde cualquier dispositivo.
+- La primera vez hay que crear la base de datos: consola de Firebase → Firestore → *Crear base de datos* → *modo de prueba* (el panel lo explica).
+- Sin `?editar`, la página muestra solo `js/config.js`.
 
-Para quitarlo al final: borrar `js/editor.js`, `css/editor.css` y las líneas marcadas `modo edición` en `js/main.js`.
+Al terminar: se pasa lo guardado en Firestore a `js/config.js` + `assets/`, y se borran `js/editor.js`, `css/editor.css` y las líneas marcadas `modo edición` en `js/main.js`.
 
 ## Firebase
 

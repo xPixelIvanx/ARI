@@ -1,9 +1,13 @@
 // Modo edición temporal: se activa con ?editar en la URL.
-// Para quitarlo: borrar este archivo, css/editor.css y las líneas marcadas "modo edición" en main.js.
+// Guarda el contenido en Firestore; al terminar se pasa a config.js y se borra este archivo,
+// css/editor.css y las líneas marcadas "modo edición" en main.js.
 
-const REPO = "xPixelIvanx/ARI";
-const DEFAULT_BRANCH = "claude/novia-firebase-github-setup-osl50n";
-const KEYS = { draft: "ari-editor-draft", prefs: "ari-editor-prefs", scroll: "ari-editor-scroll" };
+const FIRESTORE = "https://firestore.googleapis.com/v1/projects/ariii-c43e3/databases/(default)/documents";
+const API_KEY = "AIzaSyC8e2W2bL-a4VtARDVhq0z7HTOVYPabe6A";
+const CONSOLE_URL = "https://console.firebase.google.com/project/ariii-c43e3/firestore";
+// Firestore limita cada documento a 1 MiB; los archivos se guardan en trozos.
+const CHUNK = 900_000;
+const KEYS = { draft: "ari-editor-draft", dirty: "ari-editor-dirty", prefs: "ari-editor-prefs", scroll: "ari-editor-scroll" };
 
 const store = {
   get(key, fallback, area = localStorage) {
@@ -29,7 +33,39 @@ const store = {
   },
 };
 
-/* ---------- Archivos del borrador (IndexedDB) ---------- */
+/* ---------- Firestore (REST) ---------- */
+
+class NoDatabase extends Error {}
+
+async function cloud(path, { method = "GET", body, timeout = 30000 } = {}) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
+  let res;
+  try {
+    res = await fetch(`${FIRESTORE}/${path}?key=${API_KEY}`, {
+      method,
+      cache: "no-store",
+      signal: ctrl.signal,
+      headers: body ? { "Content-Type": "application/json" } : {},
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new Error("No hay conexión con Firebase. Revisa tu internet.");
+  } finally {
+    clearTimeout(timer);
+  }
+  if (res.ok) return res.json();
+  const msg = (await res.json().catch(() => ({})))?.error?.message || "";
+  if (res.status === 404 && /database .* does not exist/i.test(msg)) throw new NoDatabase();
+  if (res.status === 404) return null;
+  if (res.status === 403)
+    throw new Error("Firebase no dejó guardar. Revisa que Firestore esté en “modo de prueba” (dura 30 días).");
+  throw new Error(`Firebase respondió con un error (${res.status}). Intenta de nuevo.`);
+}
+
+const putDoc = (path, fields) => cloud(path, { method: "PATCH", body: { fields } });
+
+/* ---------- Archivos (IndexedDB como caché local) ---------- */
 
 let dbPromise;
 function db() {
@@ -57,16 +93,33 @@ const files = {
   get: (id) => tx("readonly", (s) => s.get(id)),
   put: (id, rec) => tx("readwrite", (s) => s.put(rec, id)),
   del: (id) => tx("readwrite", (s) => s.delete(id)),
-  clear: () => tx("readwrite", (s) => s.clear()),
 };
 
+// "idb:<id>" = archivo solo en este dispositivo; "fb:<id>:<trozos>:<ext>" = guardado en Firestore.
 const isLocal = (src) => typeof src === "string" && src.startsWith("idb:");
+const isCloud = (src) => typeof src === "string" && src.startsWith("fb:");
 const urls = new Map();
 
+const mimeFor = (ext) => (ext === "jpg" ? "image/jpeg" : ext === "mp3" ? "audio/mpeg" : `audio/${ext}`);
+
+async function download(src) {
+  const [, id, n, ext] = src.split(":");
+  const parts = await Promise.all(Array.from({ length: Number(n) }, (_, i) => cloud(`archivos/${id}-${i}`)));
+  if (parts.some((p) => !p)) throw new Error("missing");
+  const b64 = parts.map((p) => p.fields.data.stringValue).join("");
+  const blob = await (await fetch(`data:${mimeFor(ext)};base64,${b64}`)).blob();
+  return { blob, ext };
+}
+
 async function urlFor(src) {
+  if (!src) return "";
   if (urls.has(src)) return urls.get(src);
-  if (!isLocal(src)) return src;
-  const rec = await files.get(src).catch(() => null);
+  if (!isLocal(src) && !isCloud(src)) return src;
+  let rec = await files.get(src).catch(() => null);
+  if (!rec && isCloud(src)) {
+    rec = await download(src).catch(() => null);
+    if (rec) files.put(src, rec).catch(() => {});
+  }
   const url = rec ? URL.createObjectURL(rec.blob) : "";
   urls.set(src, url);
   return url;
@@ -78,9 +131,8 @@ async function saveLocal(blob, ext) {
   return id;
 }
 
-function dropLocal(id) {
-  if (!isLocal(id)) return;
-  files.del(id).catch(() => {});
+function dropLocal(src) {
+  if (isLocal(src)) files.del(src).catch(() => {});
 }
 
 async function compress(file, max = 1600) {
@@ -119,11 +171,25 @@ const toBase64 = (blob) =>
 /* ---------- Borrador ---------- */
 
 let draft;
-const prefs = { skipIntro: true, branch: DEFAULT_BRANCH, token: "", ...store.get(KEYS.prefs, {}) };
+let loadError = null;
+const prefs = { skipIntro: true, ...store.get(KEYS.prefs, {}) };
 const savePrefs = () => store.set(KEYS.prefs, prefs);
+const isDirty = () => store.get(KEYS.dirty, false);
 
 export async function loadDraft(base) {
-  draft = { ...structuredClone(base), ...store.get(KEYS.draft, {}) };
+  let data = store.get(KEYS.draft, null);
+  if (!isDirty()) {
+    try {
+      const doc = await cloud("edicion/contenido", { timeout: 8000 });
+      if (doc) {
+        data = JSON.parse(doc.fields.json.stringValue);
+        store.set(KEYS.draft, data);
+      }
+    } catch (err) {
+      loadError = err;
+    }
+  }
+  draft = { ...structuredClone(base), ...(data || {}) };
   const view = structuredClone(draft);
   await Promise.all([
     ...view.memories.map(async (m) => (m.src = await urlFor(m.src))),
@@ -138,7 +204,8 @@ function saveNow() {
   if (!store.set(KEYS.draft, draft)) status("No se pudo guardar el borrador en este dispositivo.", "error");
 }
 function changed() {
-  status("Cambios sin previsualizar");
+  store.set(KEYS.dirty, true);
+  status("Tienes cambios sin guardar.");
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveNow, 300);
 }
@@ -238,6 +305,21 @@ function status(text, kind = "") {
   statusEl.dataset.kind = kind;
 }
 
+const setupBox = h(
+  "div",
+  { class: "ed-setup", hidden: true },
+  h("p", { class: "ed-setup__title" }, "Falta un paso (solo la primera vez)"),
+  h(
+    "ol",
+    {},
+    h("li", {}, "Abre Firestore en la consola de Firebase con el botón de abajo."),
+    h("li", {}, "Toca “Crear base de datos”."),
+    h("li", {}, "Elige “Comenzar en modo de prueba” y cualquier ubicación."),
+    h("li", {}, "Vuelve aquí y toca “Guardar”.")
+  ),
+  h("a", { class: "ed-btn ed-btn--sm", href: CONSOLE_URL, target: "_blank", rel: "noopener" }, "Abrir Firestore ↗")
+);
+
 /* ---------- Secciones ---------- */
 
 function photoItem(m) {
@@ -286,10 +368,14 @@ function photoItem(m) {
 
 function musicSection() {
   const info = h("span", { class: "ed-help" });
-  const describe = () =>
-    (info.textContent = isLocal(draft.music.src)
-      ? "Canción nueva lista para publicar."
-      : `Archivo actual: ${draft.music.src || "ninguno"}`);
+  const describe = () => {
+    const src = draft.music.src;
+    info.textContent = isLocal(src)
+      ? "Canción nueva (sin guardar todavía)."
+      : isCloud(src)
+        ? "Canción guardada ✓"
+        : `Archivo actual: ${src || "ninguno"}`;
+  };
   describe();
 
   const input = h("input", { type: "file", accept: "audio/*", class: "ed-file" });
@@ -297,8 +383,8 @@ function musicSection() {
     const file = input.files[0];
     input.value = "";
     if (!file) return;
-    if (file.size > 20 * 1024 * 1024) {
-      status("Esa canción pesa más de 20 MB; usa una versión más ligera.", "error");
+    if (file.size > 15 * 1024 * 1024) {
+      status("Esa canción pesa más de 15 MB; usa una versión más ligera.", "error");
       return;
     }
     const ext = (file.name.split(".").pop() || "mp3").toLowerCase().replace(/[^a-z0-9]/g, "") || "mp3";
@@ -328,21 +414,7 @@ function musicSection() {
   );
 }
 
-function publishSection() {
-  const token = h("input", { type: "password", autocomplete: "off", spellcheck: "false", placeholder: "github_pat_…" });
-  token.value = prefs.token;
-  token.addEventListener("input", () => {
-    prefs.token = token.value.trim();
-    savePrefs();
-  });
-
-  const branch = h("input", { type: "text", autocomplete: "off", spellcheck: "false" });
-  branch.value = prefs.branch;
-  branch.addEventListener("input", () => {
-    prefs.branch = branch.value.trim();
-    savePrefs();
-  });
-
+function settingsSection() {
   const skip = h("input", { type: "checkbox" });
   skip.checked = prefs.skipIntro;
   skip.addEventListener("change", () => {
@@ -350,36 +422,22 @@ function publishSection() {
     savePrefs();
   });
 
-  return h(
-    "details",
-    { class: "ed-section", id: "ed-publish" },
-    h("summary", {}, "Publicar y ajustes"),
+  return section(
+    "Ajustes",
+    h("label", { class: "ed-check" }, skip, h("span", {}, "Saltar la intro al previsualizar")),
     h(
-      "div",
-      { class: "ed-section__body" },
-      h(
-        "p",
-        { class: "ed-help" },
-        "Para publicar necesitas un token de GitHub (solo una vez): en GitHub ve a Settings → Developer settings → Fine-grained tokens → Generate new token. En “Repository access” elige solo ARI y en “Permissions → Contents” pon “Read and write”. Cópialo y pégalo aquí. Se guarda solo en este dispositivo."
-      ),
-      h("a", { class: "ed-link", href: "https://github.com/settings/personal-access-tokens/new", target: "_blank", rel: "noopener" }, "Crear token en GitHub ↗"),
-      h("label", { class: "ed-field" }, h("span", { class: "ed-label" }, "Token de GitHub"), token),
-      h("label", { class: "ed-field" }, h("span", { class: "ed-label" }, "Rama"), branch, h("span", { class: "ed-help" }, "La rama que Vercel publica.")),
-      h("label", { class: "ed-check" }, skip, h("span", {}, "Saltar la intro al previsualizar")),
-      h(
-        "button",
-        {
-          type: "button",
-          class: "ed-btn ed-btn--danger ed-btn--sm",
-          onclick: async () => {
-            if (!confirm("¿Descartar todos los cambios que no has publicado?")) return;
-            store.del(KEYS.draft);
-            await files.clear().catch(() => {});
-            location.reload();
-          },
+      "button",
+      {
+        type: "button",
+        class: "ed-btn ed-btn--danger ed-btn--sm",
+        onclick: () => {
+          if (!confirm("¿Descartar los cambios que no has guardado?")) return;
+          store.del(KEYS.draft);
+          store.del(KEYS.dirty);
+          location.reload();
         },
-        "Descartar borrador"
-      )
+      },
+      "Descartar cambios sin guardar"
     )
   );
 }
@@ -403,7 +461,13 @@ function buildSections() {
     ),
     section(
       "Contador",
-      h("label", { class: "ed-field" }, h("span", { class: "ed-label" }, "Juntos desde"), datetime, h("span", { class: "ed-help" }, "Fecha y hora desde la que cuenta el contador."))
+      h(
+        "label",
+        { class: "ed-field" },
+        h("span", { class: "ed-label" }, "Juntos desde"),
+        datetime,
+        h("span", { class: "ed-help" }, "Fecha y hora desde la que cuenta el contador.")
+      )
     ),
     section(
       "Intro e inicio",
@@ -445,105 +509,58 @@ function buildSections() {
     ),
     section("Secreto (✦)", field(null, () => d.secret, (v) => (d.secret = v), { multiline: true, rows: 4 })),
     musicSection(),
-    publishSection(),
+    settingsSection(),
   ];
 }
 
-/* ---------- Publicar en GitHub ---------- */
+/* ---------- Guardar en Firebase ---------- */
 
-function github(token) {
-  return async (path, { method = "GET", body, allow404 = false } = {}) => {
-    let res;
-    try {
-      res = await fetch(`https://api.github.com/repos/${REPO}${path}`, {
-        method,
-        cache: "no-store",
-        headers: {
-          Accept: "application/vnd.github+json",
-          Authorization: `Bearer ${token}`,
-          "X-GitHub-Api-Version": "2022-11-28",
-          ...(body ? { "Content-Type": "application/json" } : {}),
-        },
-        body: body ? JSON.stringify(body) : undefined,
-      });
-    } catch {
-      throw new Error("No hay conexión con GitHub. Revisa tu internet.");
-    }
-    if (res.status === 404 && allow404) return null;
-    if (res.status === 401) throw new Error("El token no es válido o ya expiró.");
-    if (res.status === 403 || res.status === 404)
-      throw new Error("El token no tiene permiso de escritura en ARI, o la rama no existe.");
-    if (!res.ok) throw new Error(`GitHub respondió con un error (${res.status}). Intenta de nuevo.`);
-    return res.json();
-  };
-}
-
-const toConfigSource = (cfg) =>
-  `// Todo el contenido de la página vive aquí. Editado con el modo edición (?editar).\n\nexport default ${JSON.stringify(cfg, null, 2)};\n`;
-
-async function publish(buttons, rebuild) {
-  if (!prefs.token) {
-    document.getElementById("ed-publish").open = true;
-    status("Primero pega tu token de GitHub en “Publicar y ajustes”.", "error");
-    return;
-  }
-  if (!confirm("¿Publicar los cambios? La página en línea se actualizará en un minuto más o menos.")) return;
-
+async function save(buttons, rebuild) {
   saveNow();
   buttons.forEach((b) => (b.disabled = true));
-  const branch = (prefs.branch || DEFAULT_BRANCH).split("/").map(encodeURIComponent).join("/");
-  const api = github(prefs.token);
-
   try {
-    status("Conectando con GitHub…");
-    const head = (await api(`/git/ref/heads/${branch}`)).object.sha;
-    const baseTree = (await api(`/git/commits/${head}`)).tree.sha;
-
     const out = structuredClone(draft);
-    const stamp = Date.now().toString(36);
-    const jobs = [];
-    out.memories.forEach((m, i) => {
-      if (isLocal(m.src)) jobs.push({ obj: m, id: m.src, path: (ext) => `assets/fotos/${stamp}-${i + 1}.${ext}` });
+    const pending = [...out.memories, out.music].filter((o) => isLocal(o.src));
+    const uploaded = [];
+
+    for (const [k, o] of pending.entries()) {
+      status(`Subiendo archivos… ${k + 1} de ${pending.length}`);
+      const rec = await files.get(o.src);
+      if (!rec) throw new Error("Falta un archivo; vuelve a elegirlo.");
+      const b64 = await toBase64(rec.blob);
+      const id = o.src.slice(4);
+      const n = Math.max(1, Math.ceil(b64.length / CHUNK));
+      for (let i = 0; i < n; i++) {
+        await putDoc(`archivos/${id}-${i}`, { data: { stringValue: b64.slice(i * CHUNK, (i + 1) * CHUNK) } });
+      }
+      const cloudSrc = `fb:${id}:${n}:${rec.ext}`;
+      await files.put(cloudSrc, rec);
+      if (urls.has(o.src)) urls.set(cloudSrc, urls.get(o.src));
+      uploaded.push(o.src);
+      o.src = cloudSrc;
+    }
+
+    status("Guardando…");
+    await putDoc("edicion/contenido", {
+      json: { stringValue: JSON.stringify(out) },
+      actualizado: { timestampValue: new Date().toISOString() },
     });
-    if (isLocal(out.music.src)) jobs.push({ obj: out.music, id: out.music.src, path: (ext) => `assets/musica.${ext}` });
 
-    const tree = [];
-    for (const [n, job] of jobs.entries()) {
-      status(`Subiendo archivos… ${n + 1} de ${jobs.length}`);
-      const rec = await files.get(job.id);
-      if (!rec) throw new Error("Falta un archivo del borrador; vuelve a elegirlo.");
-      const blob = await api("/git/blobs", { method: "POST", body: { content: await toBase64(rec.blob), encoding: "base64" } });
-      job.obj.src = job.path(rec.ext);
-      tree.push({ path: job.obj.src, mode: "100644", type: "blob", sha: blob.sha });
-    }
-
-    const used = new Set(out.memories.map((m) => m.src));
-    const existing = (await api(`/contents/assets/fotos?ref=${branch}`, { allow404: true })) || [];
-    for (const f of existing) {
-      if (f.type === "file" && !f.name.startsWith(".") && !used.has(f.path))
-        tree.push({ path: f.path, mode: "100644", type: "blob", sha: null });
-    }
-
-    tree.push({ path: "js/config.js", mode: "100644", type: "blob", content: toConfigSource(out) });
-
-    status("Guardando cambios…");
-    const newTree = await api("/git/trees", { method: "POST", body: { base_tree: baseTree, tree } });
-    const commit = await api("/git/commits", {
-      method: "POST",
-      body: { message: "Actualizar contenido desde el modo edición", tree: newTree.sha, parents: [head] },
-    });
-    await api(`/git/refs/heads/${branch}`, { method: "PATCH", body: { sha: commit.sha } });
-
-    for (const job of jobs) {
-      if (urls.has(job.id)) urls.set(job.obj.src, urls.get(job.id));
-      dropLocal(job.id);
-    }
+    uploaded.forEach(dropLocal);
     draft = out;
     saveNow();
+    store.set(KEYS.dirty, false);
+    setupBox.hidden = true;
     rebuild();
-    status("¡Publicado! La página en línea se actualiza en un minuto más o menos.", "ok");
+    status("Guardado ✓ Puedes seguir editando cuando quieras, desde cualquier dispositivo.", "ok");
   } catch (err) {
-    status(err.message || "Algo salió mal al publicar.", "error");
+    if (err instanceof NoDatabase) {
+      setupBox.hidden = false;
+      setupBox.scrollIntoView({ block: "nearest" });
+      status("Todavía no se puede guardar: falta crear la base de datos (mira arriba).", "error");
+    } else {
+      status(err.message || "Algo salió mal al guardar.", "error");
+    }
   } finally {
     buttons.forEach((b) => (b.disabled = false));
   }
@@ -554,20 +571,29 @@ async function publish(buttons, rebuild) {
 export function mount({ openGift, lenis }) {
   document.head.append(h("link", { rel: "stylesheet", href: "css/editor.css" }));
 
-  const body = h("div", { class: "ed-body", "data-lenis-prevent": true });
-  const rebuild = () => body.replaceChildren(...buildSections());
+  const sections = h("div", { class: "ed-sections" });
+  const rebuild = () => sections.replaceChildren(...buildSections());
   rebuild();
+  const body = h("div", { class: "ed-body", "data-lenis-prevent": true }, setupBox, sections);
 
-  statusEl = h("p", { class: "ed-status", role: "status", "aria-live": "polite" }, "Los cambios se guardan como borrador en este dispositivo.");
+  statusEl = h("p", { class: "ed-status", role: "status", "aria-live": "polite" });
+  if (loadError instanceof NoDatabase) {
+    setupBox.hidden = false;
+    status("Puedes editar y previsualizar; para guardar falta un paso (arriba).");
+  } else if (loadError) {
+    status("No se pudo cargar lo guardado en Firebase; estás viendo el borrador de este dispositivo.", "error");
+  } else {
+    status(isDirty() ? "Tienes cambios sin guardar." : "Todo guardado.");
+  }
 
   const preview = h("button", { type: "button", class: "ed-btn ed-btn--ghost" }, "Vista previa");
-  const publishBtn = h("button", { type: "button", class: "ed-btn" }, "Publicar");
+  const saveBtn = h("button", { type: "button", class: "ed-btn" }, "Guardar");
   preview.addEventListener("click", () => {
     saveNow();
     store.set(KEYS.scroll, window.scrollY, sessionStorage);
     location.reload();
   });
-  publishBtn.addEventListener("click", () => publish([preview, publishBtn], rebuild));
+  saveBtn.addEventListener("click", () => save([preview, saveBtn], rebuild));
 
   const panel = h(
     "aside",
@@ -579,7 +605,7 @@ export function mount({ openGift, lenis }) {
       h("button", { type: "button", class: "ed-close", "aria-label": "Cerrar", onclick: () => toggle(false) }, "✕")
     ),
     body,
-    h("footer", { class: "ed-foot" }, statusEl, h("div", { class: "ed-actions" }, preview, publishBtn))
+    h("footer", { class: "ed-foot" }, statusEl, h("div", { class: "ed-actions" }, preview, saveBtn))
   );
 
   const fab = h("button", { type: "button", class: "ed-fab", onclick: () => toggle(true) }, "✎ Editar");
