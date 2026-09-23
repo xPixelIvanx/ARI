@@ -28,17 +28,6 @@ Todo el contenido está en **`js/config.js`**: nombres, fecha de inicio, frases 
 
 Sube un archivo `.mp3` como `assets/musica.mp3`. Si no existe, el botón de música simplemente no aparece.
 
-## Modo edición (temporal)
-
-Abre la página con `?editar` al final (ej. `https://tu-sitio.vercel.app/?editar`). Aparece un botón **✎ Editar** para cambiar textos, fecha del contador, fotos, tarjetas, música, etc.
-
-- *Vista previa* recarga la página con los cambios.
-- *Guardar* los sube a **Firestore** (textos, fotos y música), así se pueden seguir editando desde cualquier dispositivo.
-- La primera vez hay que crear la base de datos: consola de Firebase → Firestore → *Crear base de datos* → *modo de prueba* (el panel lo explica).
-- Sin `?editar`, la página muestra solo `js/config.js`.
-
-Al terminar: se pasa lo guardado en Firestore a `js/config.js` + `assets/`, y se borran `js/editor.js`, `css/editor.css` y las líneas marcadas `modo edición` en `js/main.js`.
-
 ## Firebase
 
 Proyecto `ariii-c43e3`. La configuración está en `js/firebase.js` (son valores públicos por diseño; la seguridad real se controla con las reglas de Firebase).
