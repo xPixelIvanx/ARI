@@ -2,80 +2,153 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Página de prueba</title>
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #0f0f1a;
-      color: #f5f5f5;
-      font-family: system-ui, sans-serif;
-    }
-    main {
-      text-align: center;
-      padding: 2rem;
-    }
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-    }
-    #status {
-      margin-top: 1rem;
-      font-size: 0.95rem;
-      opacity: 0.8;
-    }
-    #status.ok { color: #4ade80; }
-    #status.error { color: #f87171; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#FFFBFC" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Tengo algo para ti</title>
+  <meta name="description" content="Ábrelo con el volumen arriba." />
+  <meta property="og:title" content="Tengo algo para ti" />
+  <meta property="og:description" content="Ábrelo con el volumen arriba." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23CF6A8A'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23fff' stroke-opacity='.5'/%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script type="module" src="js/main.js"></script>
 </head>
-<body>
-  <main>
-    <h1>Página en construcción 💌</h1>
-    <p id="status">Comprobando conexión con Firebase...</p>
+<body class="is-locked">
+  <div class="grain" aria-hidden="true"></div>
+  <canvas id="petals" aria-hidden="true"></canvas>
+
+  <!-- Intro -->
+  <div class="intro" id="intro">
+    <div class="intro__panel intro__panel--top"></div>
+    <div class="intro__panel intro__panel--bottom"></div>
+    <div class="intro__content">
+      <p class="intro__meta intro__meta--top">Privado · Solo para <span data-her-name></span></p>
+      <div class="intro__lines" id="intro-lines" aria-live="polite"></div>
+      <button class="seal" id="seal" type="button" aria-label="Mantén presionado para abrir">
+        <svg class="seal__ring" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="seal__track" cx="60" cy="60" r="56" />
+          <circle class="seal__progress" cx="60" cy="60" r="56" />
+        </svg>
+        <span class="seal__wax"><span class="seal__mono" data-monogram></span></span>
+      </button>
+      <p class="intro__hint">Mantén presionado para abrir</p>
+      <p class="intro__meta intro__meta--bottom">Mejor con el volumen arriba</p>
+    </div>
+  </div>
+
+  <main id="site" inert>
+    <!-- Hero -->
+    <header class="hero">
+      <p class="eyebrow h-anim" style="--i:0">Un regalo para</p>
+      <h1 class="hero__title h-anim" id="hero-title" style="--i:1"><span data-her-name></span></h1>
+      <p class="hero__subtitle h-anim" id="hero-subtitle" style="--i:2"></p>
+
+      <div class="counter h-anim" style="--i:3">
+        <p class="counter__label">Juntos desde hace</p>
+        <div class="counter__grid">
+          <div class="counter__unit"><span class="counter__num" id="c-days">0</span><span class="counter__txt">días</span></div>
+          <div class="counter__unit"><span class="counter__num" id="c-hours">00</span><span class="counter__txt">horas</span></div>
+          <div class="counter__unit"><span class="counter__num" id="c-mins">00</span><span class="counter__txt">min</span></div>
+          <div class="counter__unit"><span class="counter__num" id="c-secs">00</span><span class="counter__txt">seg</span></div>
+        </div>
+      </div>
+
+      <a class="scroll-cue h-anim" href="#carta" style="--i:4">Desliza</a>
+    </header>
+
+    <!-- 01 Carta -->
+    <section class="section" id="carta">
+      <div class="section__head reveal">
+        <span class="section__num">01</span>
+        <h2 class="section__title">Una carta</h2>
+      </div>
+
+      <div class="envelope-wrap reveal" id="envelope-wrap">
+        <p class="hint">Toca el sobre para abrirlo</p>
+        <div class="envelope" id="envelope" role="button" tabindex="0" aria-label="Abrir la carta">
+          <div class="envelope__back"></div>
+          <div class="envelope__paper"><span>Para <span data-her-name></span></span></div>
+          <div class="envelope__front"></div>
+          <div class="envelope__flap"></div>
+          <div class="envelope__seal"><span data-monogram></span></div>
+        </div>
+      </div>
+
+      <article class="letter" id="letter" hidden>
+        <p class="letter__date" id="letter-date"></p>
+        <p class="letter__greeting" id="letter-greeting"></p>
+        <div class="letter__body" id="letter-body"></div>
+        <p class="letter__sign" id="letter-sign"></p>
+      </article>
+    </section>
+
+    <!-- 02 Recuerdos -->
+    <section class="section" id="recuerdos">
+      <div class="section__head reveal">
+        <span class="section__num">02</span>
+        <h2 class="section__title">Recuerdos</h2>
+        <p class="section__lead">Algunos de mis momentos favoritos. Toca cualquiera para verlo en grande.</p>
+      </div>
+      <div class="gallery" id="gallery"></div>
+    </section>
+
+    <!-- 03 Abre cuando -->
+    <section class="section" id="abre-cuando">
+      <div class="section__head reveal">
+        <span class="section__num">03</span>
+        <h2 class="section__title">Abre cuando…</h2>
+        <p class="section__lead">Guárdalas para el momento indicado. O ábrelas todas ahora, no te juzgo.</p>
+      </div>
+      <div class="cards" id="cards"></div>
+    </section>
+
+    <!-- 04 Final -->
+    <section class="section final" id="final">
+      <div class="section__head reveal">
+        <span class="section__num">04</span>
+        <h2 class="section__title" id="final-title"></h2>
+      </div>
+      <div class="final__stage reveal">
+        <div class="final__ask">
+          <button class="final__btn" id="final-btn" type="button"></button>
+        </div>
+        <div class="final__reveal" id="final-reveal" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      Hecho a mano por <span data-from-name></span>
+      <button class="secret" id="secret" type="button" aria-label="Secreto">✦</button>
+    </footer>
   </main>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  <button class="music" id="music" type="button" aria-label="Reproducir música" aria-pressed="false">
+    <span class="music__bars" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+  </button>
 
-    // Configuración de Firebase del proyecto "ariii".
-    // Estos valores son públicos por diseño (identifican el proyecto en el
-    // cliente); la seguridad real se controla con las reglas de Firestore/Auth.
-    const firebaseConfig = {
-      apiKey: "AIzaSyC8e2W2bL-a4VtARDVhq0z7HTOVYPabe6A",
-      authDomain: "ariii-c43e3.firebaseapp.com",
-      projectId: "ariii-c43e3",
-      storageBucket: "ariii-c43e3.firebasestorage.app",
-      messagingSenderId: "499391976845",
-      appId: "1:499391976845:web:56ae8a7ccfb1aef4d0d9c4",
-      measurementId: "G-9LR7P8HPDM",
-    };
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Recuerdo" hidden>
+    <button class="lightbox__btn lightbox__close" id="lb-close" type="button" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    </button>
+    <button class="lightbox__btn lightbox__nav lightbox__nav--prev" id="lb-prev" type="button" aria-label="Anterior">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+    </button>
+    <figure class="lightbox__figure">
+      <div class="lightbox__media" id="lb-media"></div>
+      <figcaption class="lightbox__caption">
+        <span class="lightbox__title" id="lb-caption"></span>
+        <span class="lightbox__date" id="lb-date"></span>
+      </figcaption>
+    </figure>
+    <button class="lightbox__btn lightbox__nav lightbox__nav--next" id="lb-next" type="button" aria-label="Siguiente">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+    </button>
+  </div>
 
-    const statusEl = document.getElementById("status");
-
-    async function start() {
-      try {
-        const app = initializeApp(firebaseConfig);
-        getFirestore(app);
-
-        if (await isSupported()) {
-          getAnalytics(app);
-        }
-
-        statusEl.textContent = "Conectado a Firebase correctamente ✅";
-        statusEl.classList.add("ok");
-      } catch (err) {
-        statusEl.textContent = "Error al conectar con Firebase (" + err.message + ")";
-        statusEl.classList.add("error");
-      }
-    }
-
-    start();
-  </script>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

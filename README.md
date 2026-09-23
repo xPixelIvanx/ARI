@@ -1,40 +1,48 @@
 # ARI
 
-Sitio web de prueba (HTML simple) conectado a **Firebase**, con el código en **GitHub** y desplegado automáticamente con **Vercel**.
+Página-regalo hecha en HTML/CSS/JS puro (sin frameworks, carga rápido), conectada a **Firebase** (Analytics), con el código en **GitHub** y desplegada con **Vercel**.
 
-Por ahora es solo una página vacía de prueba que confirma si la conexión con Firebase funciona. A partir de aquí se puede ir construyendo el resto del sitio.
+## Qué tiene
 
-## Estructura
+1. **Intro misteriosa**: frases que aparecen una por una y un sello de lacre que hay que *mantener presionado* para abrir el regalo. Al abrirse, se corre la cortina, caen pétalos y empieza la música.
+2. **Hero** con su nombre y un contador en vivo de cuánto tiempo llevan juntos.
+3. **Carta**: un sobre animado que se abre y revela la carta.
+4. **Recuerdos**: galería de fotos con visor a pantalla completa (se puede deslizar en el celular).
+5. **Abre cuando…**: tarjetas que se voltean con mensajes para momentos específicos.
+6. **Sorpresa final**: un botón de "no presiones este botón".
+7. **Secretos**: el ✦ del pie de página esconde un mensaje, y tocar su nombre 3 veces lanza pétalos.
+8. **Música de fondo** con botón flotante para pausar.
 
-- `index.html` — página de prueba. Ya tiene cargada la configuración del proyecto Firebase `ariii` y muestra si logró conectar.
-- `vercel.json` — configuración mínima para que Vercel sirva el sitio como estático.
+## Cómo personalizarla
 
-No hace falta ningún paso de build ni variables de entorno: los valores de `firebaseConfig` (apiKey, authDomain, etc.) son públicos por diseño, están pensados para vivir en el código del cliente. La seguridad real de los datos se controla desde las **reglas de Firestore/Storage/Auth** en la consola de Firebase, no ocultando estos valores.
+Todo el contenido está en **`js/config.js`**: nombres, fecha de inicio, frases de la intro, carta, fotos, tarjetas, mensaje final y secreto. No hace falta tocar nada más.
 
-## 1. Firebase
+### Fotos
 
-Ya está creado y conectado: proyecto `ariii-c43e3`. Si más adelante se necesita guardar datos (mensajes, fotos, etc.), hay que activar Firestore/Storage/Auth desde el menú lateral de https://console.firebase.google.com/ (proyecto `ariii`) y agregar el código correspondiente en `index.html`.
+1. Sube las fotos a `assets/fotos/` (ej. `assets/fotos/1.jpg`).
+2. En `js/config.js`, en `memories`, pon la ruta en `src` y ajusta `ratio` a la forma de la foto (`"4/5"` vertical, `"1/1"` cuadrada, `"3/2"` horizontal).
+3. Idealmente fotos de menos de ~500 KB cada una (puedes comprimirlas en https://squoosh.app) para que cargue rápido.
 
-## 2. Conectar el repositorio con Vercel
+### Música
 
-1. Ir a https://vercel.com/ e iniciar sesión (puedes usar tu cuenta de GitHub).
-2. Click en **Add New… > Project**.
-3. Seleccionar el repositorio `xPixelIvanx/ARI` e importarlo.
-4. Vercel va a detectar que es un sitio estático automáticamente (no hace falta tocar el Framework Preset ni configurar variables de entorno).
-5. Click en **Deploy**.
-6. Cada vez que se haga push a la rama conectada en GitHub, Vercel va a redesplegar automáticamente.
+Sube un archivo `.mp3` como `assets/musica.mp3`. Si no existe, el botón de música simplemente no aparece.
 
-## 3. Probar en local (opcional)
+## Firebase
 
-Al no requerir build, basta con abrir `index.html` con cualquier servidor estático, por ejemplo:
+Proyecto `ariii-c43e3`. La configuración está en `js/firebase.js` (son valores públicos por diseño; la seguridad real se controla con las reglas de Firebase).
+
+La página registra eventos en **Analytics** para que sepas cuándo ella la abrió: `gift_opened`, `letter_opened`, `memory_viewed`, `open_when`, `final_surprise`, `secret_found`. Se ven en la consola de Firebase > Analytics > Events (tardan un rato en aparecer; en *DebugView* se ven casi en tiempo real).
+
+## Vercel
+
+1. https://vercel.com/ → **Add New… > Project** → importar `xPixelIvanx/ARI`.
+2. Dejar todo por defecto (sitio estático, sin build ni variables de entorno) → **Deploy**.
+3. Cada push a la rama conectada redespliega automáticamente.
+
+## Probar en local
 
 ```bash
 npx serve .
 ```
 
-(Abrir el archivo directamente con doble click también funciona, salvo que se quiera activar Analytics, que necesita `http(s)://`.)
-
-## Siguientes pasos
-
-- Definir qué va a tener la página (fotos, mensajes, contador de días, etc.).
-- Activar Firestore/Storage/Auth en la consola de Firebase si se necesita guardar o autenticar datos, y configurar las **reglas de seguridad** correspondientes.
+(Hace falta un servidor local porque los scripts son módulos ES; abrir el archivo con doble click no funciona.)
