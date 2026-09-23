@@ -8,15 +8,16 @@ Página-regalo hecha en HTML/CSS/JS puro (sin frameworks, carga rápido), conect
 2. **Hero** con su nombre y un contador en vivo de cuánto tiempo llevan juntos.
 3. **Carta**: un sobre animado que se abre y revela la carta.
 4. **Recuerdos**: galería de fotos con visor a pantalla completa (se puede deslizar en el celular).
-5. **Abre cuando…**: tarjetas que se voltean con mensajes para momentos específicos.
-6. **Sorpresa final**: un botón de "no presiones este botón".
-7. **Secretos**: el ✦ del pie de página esconde un mensaje, y tocar su nombre 3 veces lanza pétalos.
-8. **Música de fondo** con botón flotante para pausar.
-9. **Animaciones suaves**: scroll con inercia ([Lenis](https://github.com/darkroomengineering/lenis), incluido en `js/vendor/`, licencia MIT), títulos que aparecen palabra por palabra, fotos que se revelan, parallax en el inicio y contador que sube desde cero.
+5. **Nuestras canciones**: cada canción es un vinil dentro de su portada; al tocarlo sale girando y aparece la frase. No reproduce audio.
+6. **Abre cuando…**: tarjetas que se voltean con mensajes para momentos específicos.
+7. **Sorpresa final**: un botón de "no presiones este botón".
+8. **Secretos**: el ✦ del pie de página esconde un mensaje, y tocar su nombre 3 veces lanza pétalos.
+9. **Música de fondo** con botón flotante para pausar.
+10. **Animaciones suaves**: scroll con inercia ([Lenis](https://github.com/darkroomengineering/lenis), incluido en `js/vendor/`, licencia MIT), títulos que aparecen palabra por palabra, fotos que se revelan, parallax en el inicio y contador que sube desde cero.
 
 ## Cómo personalizarla
 
-Todo el contenido está en **`js/config.js`**: nombres, fecha de inicio, frases de la intro, carta, fotos, tarjetas, mensaje final y secreto. No hace falta tocar nada más.
+Todo el contenido está en **`js/config.js`**: nombres, fecha de inicio, frases de la intro, carta, fotos, canciones, tarjetas, mensaje final y secreto. No hace falta tocar nada más.
 
 ### Fotos
 
@@ -28,11 +29,17 @@ Todo el contenido está en **`js/config.js`**: nombres, fecha de inicio, frases 
 
 Sube un archivo `.mp3` como `assets/musica.mp3`. Si no existe, el botón de música simplemente no aparece.
 
+## Modo edición (temporal)
+
+Abre la página con `?editar` al final y toca **✎ Editar**. *Guardar* sube los cambios (textos, fotos, canciones, música) a Firestore; sin `?editar` la página muestra solo `js/config.js`. En *Canciones* basta pegar el link de Spotify para que se llenen el nombre y la portada.
+
+Al terminar se pasa lo guardado a `js/config.js` + `assets/` y se borran `js/editor.js`, `css/editor.css` y las líneas marcadas `modo edición` en `js/main.js`.
+
 ## Firebase
 
 Proyecto `ariii-c43e3`. La configuración está en `js/firebase.js` (son valores públicos por diseño; la seguridad real se controla con las reglas de Firebase).
 
-La página registra eventos en **Analytics** para que sepas cuándo ella la abrió: `gift_opened`, `letter_opened`, `memory_viewed`, `open_when`, `final_surprise`, `secret_found`. Se ven en la consola de Firebase > Analytics > Events (tardan un rato en aparecer; en *DebugView* se ven casi en tiempo real).
+La página registra eventos en **Analytics** para que sepas cuándo ella la abrió: `gift_opened`, `letter_opened`, `memory_viewed`, `open_when`, `song_opened`, `final_surprise`, `secret_found`. Se ven en la consola de Firebase > Analytics > Events (tardan un rato en aparecer; en *DebugView* se ven casi en tiempo real).
 
 ## Vercel
 

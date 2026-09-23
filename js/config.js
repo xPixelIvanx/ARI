@@ -60,6 +60,29 @@ export default {
       "ratio": "1/1"
     }
   ],
+  "songs": [
+    {
+      "spotify": "",
+      "cover": "",
+      "title": "Nombre de la canción",
+      "artist": "Artista",
+      "quote": "Aquí va la frase de la canción que me recuerda a ti."
+    },
+    {
+      "spotify": "",
+      "cover": "",
+      "title": "Otra canción",
+      "artist": "Artista",
+      "quote": "Otra frase que me hace pensar en ti cada vez que la escucho."
+    },
+    {
+      "spotify": "",
+      "cover": "",
+      "title": "Nuestra canción",
+      "artist": "Artista",
+      "quote": "La que siempre va a ser nuestra."
+    }
+  ],
   "openWhen": [
     {
       "title": "estés triste",

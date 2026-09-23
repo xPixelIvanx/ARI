@@ -1,5 +1,9 @@
-import CONFIG from "./config.js";
+import BASE_CONFIG from "./config.js";
 import Lenis from "./vendor/lenis.mjs";
+
+// modo edición (temporal)
+const editor = new URLSearchParams(location.search).has("editar") ? await import("./editor.js") : null;
+const CONFIG = editor ? await editor.loadDraft(BASE_CONFIG) : BASE_CONFIG;
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -449,6 +453,8 @@ function setupSeal() {
     await wait(2100);
     intro.remove();
   }
+
+  return openGift;
 }
 
 /* ---------- Counter ---------- */
@@ -649,6 +655,64 @@ function renderGallery() {
   });
 }
 
+/* ---------- Songs ---------- */
+
+function coverArt(song, i, className) {
+  if (song.cover) {
+    const img = el("img", className);
+    img.src = song.cover;
+    img.alt = "";
+    img.loading = "lazy";
+    img.decoding = "async";
+    return img;
+  }
+  const ph = el("span", `${className} is-placeholder ph-${i % 4}`);
+  ph.append(el("span", "ph-label", "♪"));
+  return ph;
+}
+
+function renderSongs() {
+  const wrap = $("#songs");
+  (CONFIG.songs || []).forEach((s, i) => {
+    const item = el("article", "song reveal");
+
+    const deck = el("button", "song__deck");
+    deck.type = "button";
+    deck.setAttribute("aria-expanded", "false");
+    deck.setAttribute("aria-label", `Sacar el disco: ${s.title}`);
+    const vinyl = el("span", "song__vinyl");
+    const disc = el("span", "song__disc");
+    const label = el("span", "song__label");
+    label.append(coverArt(s, i, "song__label-art"));
+    disc.append(label);
+    vinyl.append(disc);
+    const sleeve = el("span", "song__sleeve");
+    sleeve.append(coverArt(s, i, "song__sleeve-art"));
+    deck.append(vinyl, sleeve);
+
+    const text = el("div", "song__text");
+    text.append(
+      el("p", "song__title", s.title),
+      el("p", "song__artist", s.artist),
+      el("p", "song__hint", "Toca el disco"),
+      el("blockquote", "song__quote", s.quote)
+    );
+
+    let opened = false;
+    deck.addEventListener("click", () => {
+      const open = item.classList.toggle("is-open");
+      deck.setAttribute("aria-expanded", String(open));
+      if (open && !opened) {
+        opened = true;
+        track("song_opened", { song: s.title });
+      }
+    });
+
+    item.append(deck, text);
+    wrap.append(item);
+  });
+}
+
 /* ---------- Open-when cards ---------- */
 
 function renderCards() {
@@ -779,11 +843,13 @@ window.scrollTo(0, 0);
 
 renderContent();
 renderGallery();
+renderSongs();
 renderCards();
 const countUp = setupCounter();
 setupLetter();
 setupSurprises();
 setupReveal();
 setupParallax();
-setupSeal();
+const openGift = setupSeal();
 setupGate();
+editor?.mount({ openGift, lenis }); // modo edición (temporal)

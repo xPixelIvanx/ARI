@@ -977,6 +977,202 @@ body.is-open .char__inner { transform: none; }
   .lightbox { padding-bottom: 96px; }
 }
 
+/* ---------- Songs ---------- */
+
+.songs {
+  --s: min(58vw, 250px);
+  display: grid;
+  gap: clamp(72px, 12vw, 120px);
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.song__deck {
+  position: relative;
+  display: block;
+  width: calc(var(--s) * 1.5);
+  height: var(--s);
+  margin: 0 auto;
+  transform: translateX(calc(var(--s) * 0.2));
+  transition: transform 1.3s var(--ease);
+}
+.song.is-open .song__deck { transform: none; }
+
+.song__sleeve {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: var(--s);
+  height: var(--s);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--blush-100);
+  box-shadow: var(--shadow-lg);
+  transition: transform 1.2s var(--ease);
+}
+.song__sleeve::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(125deg, rgba(255, 255, 255, 0.22), transparent 42%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+}
+.song.is-open .song__sleeve { transform: translateX(-4%) rotate(-2deg); }
+
+.song__sleeve-art,
+.song__label-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.song__label-art .ph-label { font-size: 0.9rem; }
+
+.song__vinyl {
+  position: absolute;
+  top: calc(var(--s) * 0.03);
+  left: 0;
+  width: calc(var(--s) * 0.94);
+  height: calc(var(--s) * 0.94);
+  transform: translateX(12%);
+  transition: transform 1.3s var(--ease);
+}
+.song__vinyl::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 20deg,
+    transparent 0deg,
+    rgba(255, 255, 255, 0.14) 25deg,
+    transparent 55deg,
+    transparent 180deg,
+    rgba(255, 255, 255, 0.1) 205deg,
+    transparent 235deg
+  );
+  pointer-events: none;
+}
+.song.is-open .song__vinyl { transform: translateX(50%); }
+@media (hover: hover) {
+  .song:not(.is-open) .song__deck:hover .song__vinyl { transform: translateX(20%); }
+}
+
+.song__disc {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle at 50% 50%, #1d1518 0 1px, #2b2124 2px, #1d1518 3px);
+  box-shadow: 0 14px 30px -12px rgba(47, 35, 39, 0.55), inset 0 0 0 2px #0e0a0b;
+  animation: spin 2.6s linear infinite;
+  animation-play-state: paused;
+}
+.song.is-open .song__disc { animation-play-state: running; }
+.song__disc::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5%;
+  height: 5%;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45);
+  transform: translate(-50%, -50%);
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.song__label {
+  position: absolute;
+  inset: 32%;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 3px #120c0e;
+}
+
+.song__text {
+  display: grid;
+  justify-items: center;
+  margin-top: 28px;
+  text-align: center;
+}
+
+.song__title {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.9rem;
+  line-height: 1.1;
+}
+
+.song__artist {
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--rose-500);
+}
+
+.song__hint,
+.song__quote {
+  grid-row: 3;
+  grid-column: 1;
+  margin: 22px 0 0;
+  transition: opacity 0.8s var(--ease), transform 1s var(--ease);
+}
+
+.song__hint {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.song__quote {
+  max-width: 32ch;
+  font-family: var(--serif);
+  font-size: 1.45rem;
+  line-height: 1.45;
+  opacity: 0;
+  transform: translateY(12px);
+}
+.song__quote::before {
+  content: "“";
+  display: block;
+  margin-bottom: 8px;
+  font-size: 3.2rem;
+  line-height: 0.6;
+  color: var(--rose-400);
+}
+
+.song.is-open .song__hint { opacity: 0; transform: translateY(-8px); }
+.song.is-open .song__quote {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.35s;
+}
+
+@media (min-width: 760px) {
+  .songs { --s: 270px; }
+  .song {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 64px;
+  }
+  .song__deck { margin: 0; transform: none; }
+  .song__text { justify-items: start; margin-top: 0; text-align: left; }
+  .song:nth-child(even) .song__deck { order: 2; }
+  .song:nth-child(even) .song__text { justify-items: end; text-align: right; }
+}
+
 /* ---------- Open-when cards ---------- */
 
 .cards {

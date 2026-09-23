@@ -193,6 +193,7 @@ export async function loadDraft(base) {
   const view = structuredClone(draft);
   await Promise.all([
     ...view.memories.map(async (m) => (m.src = await urlFor(m.src))),
+    ...view.songs.map(async (s) => (s.cover = await urlFor(s.cover))),
     urlFor(view.music.src).then((u) => (view.music.src = u)),
   ]);
   return view;
@@ -366,6 +367,108 @@ function photoItem(m) {
   );
 }
 
+async function spotifyInfo(link) {
+  const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(link)}`);
+  if (!res.ok) throw new Error(String(res.status));
+  const data = await res.json();
+  // La miniatura de oEmbed es de 300 px; esta variante de la misma portada es de 640 px.
+  const cover = (data.thumbnail_url || "").replace("ab67616d00001e02", "ab67616d0000b273");
+  return { title: data.title || "", artist: data.author_name || "", cover };
+}
+
+function songItem(s) {
+  const thumb = h("div", { class: "ed-thumb ed-thumb--square" });
+  const showThumb = async () => {
+    const url = await urlFor(s.cover);
+    thumb.replaceChildren(url ? h("img", { src: url, alt: "" }) : h("span", {}, "Sin portada"));
+  };
+  showThumb();
+
+  const titleField = field("Canción", () => s.title, (v) => (s.title = v));
+  const artistField = field("Artista", () => s.artist, (v) => (s.artist = v));
+
+  const link = h("input", { type: "url", inputmode: "url", autocomplete: "off", placeholder: "https://open.spotify.com/track/…" });
+  link.value = s.spotify || "";
+  let lookup = 0;
+  let lastLink = null;
+  const fill = async () => {
+    const value = link.value.trim();
+    if (value === lastLink) return;
+    lastLink = value;
+    s.spotify = value;
+    changed();
+    if (!/spotify/i.test(value)) return;
+    const n = ++lookup;
+    status("Buscando la canción en Spotify…");
+    try {
+      const info = await spotifyInfo(value);
+      if (n !== lookup) return;
+      if (info.title) {
+        s.title = info.title;
+        titleField.querySelector("input").value = info.title;
+      }
+      if (info.artist) {
+        s.artist = info.artist;
+        artistField.querySelector("input").value = info.artist;
+      }
+      if (info.cover) {
+        dropLocal(s.cover);
+        s.cover = info.cover;
+        await showThumb();
+      }
+      changed();
+      status(info.artist ? "Canción encontrada ✓" : "Canción encontrada ✓ Escribe el artista a mano.", "ok");
+    } catch {
+      if (n !== lookup) return;
+      lastLink = null;
+      status("No se pudo leer ese link. Llena los datos a mano y sube la portada.", "error");
+    }
+  };
+  link.addEventListener("change", fill);
+  link.addEventListener("paste", () => setTimeout(fill, 0));
+
+  const input = h("input", { type: "file", accept: "image/*", class: "ed-file" });
+  input.addEventListener("change", async () => {
+    const file = input.files[0];
+    input.value = "";
+    if (!file) return;
+    status("Procesando portada…");
+    try {
+      const { blob } = await compress(file, 800);
+      const id = await saveLocal(blob, "jpg");
+      dropLocal(s.cover);
+      s.cover = id;
+      await showThumb();
+      changed();
+    } catch {
+      status("No se pudo leer esa imagen. Prueba con otra (JPG o PNG).", "error");
+    }
+  });
+
+  return [
+    h(
+      "label",
+      { class: "ed-field" },
+      h("span", { class: "ed-label" }, "Link de Spotify"),
+      link,
+      h("span", { class: "ed-help" }, "En Spotify: ••• → Compartir → Copiar enlace. Se llenan solos el nombre y la portada.")
+    ),
+    h(
+      "div",
+      { class: "ed-photo" },
+      thumb,
+      h(
+        "div",
+        { class: "ed-photo__fields" },
+        titleField,
+        artistField,
+        h("label", { class: "ed-btn ed-btn--ghost ed-btn--sm" }, "Subir portada", input)
+      )
+    ),
+    field("Frase", () => s.quote, (v) => (s.quote = v), { multiline: true, rows: 3 }),
+  ];
+}
+
 function musicSection() {
   const info = h("span", { class: "ed-help" });
   const describe = () => {
@@ -489,6 +592,17 @@ function buildSections() {
       list(d.memories, photoItem, () => ({ src: "", caption: "", date: "", ratio: "4/5" }), "Agregar foto", (m) => dropLocal(m.src))
     ),
     section(
+      "Canciones",
+      h("p", { class: "ed-help" }, "Pega el link de la canción y escribe la frase que te recuerda a ella. En la página no suena; solo se ve el disco."),
+      list(
+        d.songs,
+        songItem,
+        () => ({ spotify: "", cover: "", title: "", artist: "", quote: "" }),
+        "Agregar canción",
+        (s) => dropLocal(s.cover)
+      )
+    ),
+    section(
       "Abre cuando…",
       list(
         d.openWhen,
@@ -520,24 +634,29 @@ async function save(buttons, rebuild) {
   buttons.forEach((b) => (b.disabled = true));
   try {
     const out = structuredClone(draft);
-    const pending = [...out.memories, out.music].filter((o) => isLocal(o.src));
+    const pending = [
+      ...out.memories.map((o) => [o, "src"]),
+      ...out.songs.map((o) => [o, "cover"]),
+      [out.music, "src"],
+    ].filter(([o, key]) => isLocal(o[key]));
     const uploaded = [];
 
-    for (const [k, o] of pending.entries()) {
+    for (const [k, [o, key]] of pending.entries()) {
       status(`Subiendo archivos… ${k + 1} de ${pending.length}`);
-      const rec = await files.get(o.src);
+      const local = o[key];
+      const rec = await files.get(local);
       if (!rec) throw new Error("Falta un archivo; vuelve a elegirlo.");
       const b64 = await toBase64(rec.blob);
-      const id = o.src.slice(4);
+      const id = local.slice(4);
       const n = Math.max(1, Math.ceil(b64.length / CHUNK));
       for (let i = 0; i < n; i++) {
         await putDoc(`archivos/${id}-${i}`, { data: { stringValue: b64.slice(i * CHUNK, (i + 1) * CHUNK) } });
       }
       const cloudSrc = `fb:${id}:${n}:${rec.ext}`;
       await files.put(cloudSrc, rec);
-      if (urls.has(o.src)) urls.set(cloudSrc, urls.get(o.src));
-      uploaded.push(o.src);
-      o.src = cloudSrc;
+      if (urls.has(local)) urls.set(cloudSrc, urls.get(local));
+      uploaded.push(local);
+      o[key] = cloudSrc;
     }
 
     status("Guardando…");
