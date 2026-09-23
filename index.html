@@ -40,23 +40,37 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // Configuración de Firebase del proyecto "ariii".
+    // Estos valores son públicos por diseño (identifican el proyecto en el
+    // cliente); la seguridad real se controla con las reglas de Firestore/Auth.
+    const firebaseConfig = {
+      apiKey: "AIzaSyC8e2W2bL-a4VtARDVhq0z7HTOVYPabe6A",
+      authDomain: "ariii-c43e3.firebaseapp.com",
+      projectId: "ariii-c43e3",
+      storageBucket: "ariii-c43e3.firebasestorage.app",
+      messagingSenderId: "499391976845",
+      appId: "1:499391976845:web:56ae8a7ccfb1aef4d0d9c4",
+      measurementId: "G-9LR7P8HPDM",
+    };
 
     const statusEl = document.getElementById("status");
 
     async function start() {
       try {
-        const res = await fetch("./firebase-config.json");
-        if (!res.ok) throw new Error("No se encontró firebase-config.json");
-        const firebaseConfig = await res.json();
-
         const app = initializeApp(firebaseConfig);
         getFirestore(app);
+
+        if (await isSupported()) {
+          getAnalytics(app);
+        }
 
         statusEl.textContent = "Conectado a Firebase correctamente ✅";
         statusEl.classList.add("ok");
       } catch (err) {
-        statusEl.textContent = "Firebase no está configurado todavía (" + err.message + ")";
+        statusEl.textContent = "Error al conectar con Firebase (" + err.message + ")";
         statusEl.classList.add("error");
       }
     }

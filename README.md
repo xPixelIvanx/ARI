@@ -6,57 +6,35 @@ Por ahora es solo una página vacía de prueba que confirma si la conexión con 
 
 ## Estructura
 
-- `index.html` — página de prueba. Muestra si logró conectar con Firebase.
-- `scripts/build-config.js` — genera `firebase-config.json` a partir de variables de entorno durante el build (así las claves no quedan escritas en el código).
-- `vercel.json` — le dice a Vercel cómo construir y servir el sitio.
-- `.env.example` — plantilla de las variables de entorno que hay que configurar.
+- `index.html` — página de prueba. Ya tiene cargada la configuración del proyecto Firebase `ariii` y muestra si logró conectar.
+- `vercel.json` — configuración mínima para que Vercel sirva el sitio como estático.
 
-## 1. Crear el proyecto en Firebase
+No hace falta ningún paso de build ni variables de entorno: los valores de `firebaseConfig` (apiKey, authDomain, etc.) son públicos por diseño, están pensados para vivir en el código del cliente. La seguridad real de los datos se controla desde las **reglas de Firestore/Storage/Auth** en la consola de Firebase, no ocultando estos valores.
 
-1. Ir a https://console.firebase.google.com/ e iniciar sesión con tu cuenta de Google.
-2. Crear un proyecto nuevo (ej. "ari").
-3. Dentro del proyecto, ir a **Configuración del proyecto** (ícono de engranaje) > **Tus apps**.
-4. Agregar una app **Web** (ícono `</>`), ponerle un nombre.
-5. Firebase te va a mostrar un objeto `firebaseConfig` con valores como `apiKey`, `authDomain`, `projectId`, etc. Vas a necesitar esos valores en el paso 3.
+## 1. Firebase
 
-Si más adelante quieres usar Firestore/Auth/Storage, actívalos desde el menú lateral de la consola de Firebase (por ahora no es necesario, la página de prueba solo intenta conectar).
+Ya está creado y conectado: proyecto `ariii-c43e3`. Si más adelante se necesita guardar datos (mensajes, fotos, etc.), hay que activar Firestore/Storage/Auth desde el menú lateral de https://console.firebase.google.com/ (proyecto `ariii`) y agregar el código correspondiente en `index.html`.
 
-## 2. Subir el proyecto a GitHub
-
-Este repositorio ya está conectado a GitHub (`xPixelIvanx/ARI`). Solo falta hacer commit y push de estos archivos (ver más abajo, o pídele a Claude que lo haga).
-
-## 3. Conectar el repositorio con Vercel
+## 2. Conectar el repositorio con Vercel
 
 1. Ir a https://vercel.com/ e iniciar sesión (puedes usar tu cuenta de GitHub).
 2. Click en **Add New… > Project**.
 3. Seleccionar el repositorio `xPixelIvanx/ARI` e importarlo.
-4. Vercel va a detectar el `vercel.json` automáticamente. No hace falta tocar el framework preset (dejar "Other").
-5. Antes de darle a "Deploy", ir a **Environment Variables** y cargar las mismas variables del `firebaseConfig` de Firebase:
+4. Vercel va a detectar que es un sitio estático automáticamente (no hace falta tocar el Framework Preset ni configurar variables de entorno).
+5. Click en **Deploy**.
+6. Cada vez que se haga push a la rama conectada en GitHub, Vercel va a redesplegar automáticamente.
 
-   | Nombre | Valor (de Firebase) |
-   |---|---|
-   | `FIREBASE_API_KEY` | `apiKey` |
-   | `FIREBASE_AUTH_DOMAIN` | `authDomain` |
-   | `FIREBASE_PROJECT_ID` | `projectId` |
-   | `FIREBASE_STORAGE_BUCKET` | `storageBucket` |
-   | `FIREBASE_MESSAGING_SENDER_ID` | `messagingSenderId` |
-   | `FIREBASE_APP_ID` | `appId` |
-   | `FIREBASE_MEASUREMENT_ID` | `measurementId` (opcional) |
+## 3. Probar en local (opcional)
 
-6. Click en **Deploy**. Cada vez que hagas push a la rama principal en GitHub, Vercel va a redeployar automáticamente.
-
-## 4. Probar en local (opcional)
+Al no requerir build, basta con abrir `index.html` con cualquier servidor estático, por ejemplo:
 
 ```bash
-cp .env.example .env
-# completar .env con los valores de Firebase
-export $(cat .env | xargs) && npm run build
-# esto genera firebase-config.json
-# luego abrir index.html con un servidor local, por ejemplo:
 npx serve .
 ```
+
+(Abrir el archivo directamente con doble click también funciona, salvo que se quiera activar Analytics, que necesita `http(s)://`.)
 
 ## Siguientes pasos
 
 - Definir qué va a tener la página (fotos, mensajes, contador de días, etc.).
-- Si se necesita guardar datos (mensajes, fotos, etc.), activar Firestore/Storage en la consola de Firebase y agregar el código correspondiente en `index.html` o en archivos nuevos.
+- Activar Firestore/Storage/Auth en la consola de Firebase si se necesita guardar o autenticar datos, y configurar las **reglas de seguridad** correspondientes.

@@ -2,8 +2,5 @@
   "name": "ari",
   "version": "1.0.0",
   "private": true,
-  "description": "Sitio de prueba conectado a Firebase, desplegado con Vercel",
-  "scripts": {
-    "build": "node scripts/build-config.js"
-  }
+  "description": "Sitio de prueba conectado a Firebase, desplegado con Vercel"
 }
