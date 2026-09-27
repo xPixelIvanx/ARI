@@ -357,13 +357,13 @@ async function playIntro() {
     const line = lines[i];
     const isLast = i === lines.length - 1;
     line.classList.add("is-visible");
-    // Tiempo de lectura: aparece (~1.6 s) + un tiempo según el largo de la frase.
-    const readMs = isLast ? 2400 : 1600 + 2200 + line.textContent.length * 60;
-    await wait(reduceMotion ? 2000 : readMs);
+    // Tiempo de lectura cómoda según el largo de la frase.
+    const readMs = Math.max(1200, 500 + line.textContent.length * 40);
+    await wait(reduceMotion ? 1200 : readMs);
     if (!isLast) {
       line.classList.remove("is-visible");
       line.classList.add("is-gone");
-      await wait(reduceMotion ? 200 : 1500);
+      await wait(reduceMotion ? 200 : 600);
     }
   }
   $("#intro").classList.add("show-seal");

@@ -1136,6 +1136,7 @@ body.is-open .char__inner { transform: none; }
   font-family: var(--serif);
   font-size: 1.45rem;
   line-height: 1.45;
+  white-space: pre-line;
   opacity: 0;
   transform: translateY(12px);
 }
