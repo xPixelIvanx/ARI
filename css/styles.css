@@ -176,10 +176,6 @@ button {
   animation: rise 1.4s var(--ease) 0.2s forwards;
 }
 .intro__meta--top { top: max(28px, env(safe-area-inset-top)); }
-.intro__meta--bottom {
-  bottom: max(28px, env(safe-area-inset-bottom));
-  animation-delay: 1.2s;
-}
 
 .intro__lines {
   position: relative;
