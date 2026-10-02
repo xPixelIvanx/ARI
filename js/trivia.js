@@ -4,7 +4,7 @@
 
 import { QUESTIONS, ROUNDS, SETTINGS } from "./trivia-questions.js";
 
-const KEY = "ari-trivia-v2";
+const KEY = "ari-trivia-v3";
 const IMG_KEY = "ari-trivia-img";
 const HOUR = 3_600_000;
 const TOTAL = QUESTIONS.length;
@@ -30,9 +30,9 @@ const store = {
   },
 };
 
-// Los intentos de la versión anterior de la trivia ya no cuentan.
+// Subir el número de la clave reinicia el progreso de todos; las claves anteriores se limpian.
 try {
-  localStorage.removeItem("ari-trivia");
+  ["ari-trivia", "ari-trivia-v2"].forEach((k) => localStorage.removeItem(k));
 } catch {}
 
 const read = () => store.get(KEY);
