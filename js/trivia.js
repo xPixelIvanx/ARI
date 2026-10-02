@@ -2,7 +2,7 @@
 // Cada intento mezcla las preguntas (la final siempre va al último).
 // Estado en localStorage: jugando (se retoma al recargar con el mismo orden), fallado (espera 24 h) o pasado.
 
-import { QUESTIONS, ROUNDS, SETTINGS } from "./trivia-questions.js";
+import { QUESTIONS, ROUNDS, SETTINGS } from "./trivia-questions.js?v=4";
 
 const KEY = "ari-trivia-v3";
 const IMG_KEY = "ari-trivia-img";

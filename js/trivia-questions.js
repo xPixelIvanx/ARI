@@ -12,7 +12,7 @@
 // En cada opción la correcta lleva `correct: true`. Imágenes: `wiki` (título de Wikipedia en inglés,
 // la foto se busca sola), `img` (URL directa), `svg`, `icon` (emoji) o `swatch` (color).
 
-import { barbell, hoodie, jersey } from "./trivia-art.js";
+import { barbell, hoodie, jersey } from "./trivia-art.js?v=4";
 
 export const SETTINGS = {
   strikes: 5,
