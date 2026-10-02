@@ -15,16 +15,14 @@
 import { barbell, hoodie, jersey } from "./trivia-art.js";
 
 export const SETTINGS = {
-  passPercent: 70,
+  strikes: 5,
   cooldownHours: 24,
   perRound: 10,
   kicker: "Desbloqueo",
   title: "¿Quieres recuperar tu página? Gánatela.",
-  intro: "Demuestra que te importan las cosas. 50 preguntas sobre mí, en desorden, un solo intento y cero trampas.",
+  intro: "Demuestra que te importan las cosas. 50 preguntas sobre mí, en desorden. Tienes 5 strikes: a la quinta, estás fuera.",
   failTitle: "Ni modo, no lo lograste",
   failText: "Vuelve a intentar en 24 horas.",
-  passTitle: "Ok, sí te importa",
-  passText: "Lo lograste. Tu página te estaba esperando.",
   finalKicker: "Pregunta final",
   finalTitle: "Esta decide todo.",
   finalText: "Olvídate del puntaje. Si fallas esta, se acabó.",
@@ -644,6 +642,7 @@ export const QUESTIONS = [
     final: true,
     q: "¿Quién es mi novia?",
     placeholder: "Escribe su nombre",
+    reveal: "Ari",
     // Vale Ari, Aranza, su nombre completo (o "yo").
     accept: (v) => v.split(" ").some((w) => w === "ari" || w.startsWith("aranz") || w === "yo"),
   },

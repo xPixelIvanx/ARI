@@ -12,6 +12,7 @@ const PER = SETTINGS.perRound;
 const REGULAR = QUESTIONS.filter((q) => !q.final).length;
 const BY_ID = new Map(QUESTIONS.map((q) => [q.id, q]));
 const FINAL = QUESTIONS.find((q) => q.final);
+const STRIKES = SETTINGS.strikes;
 const GAP = 8; // separación entre filas al ordenar (igual que en el CSS)
 
 const store = {
@@ -268,7 +269,7 @@ export async function runTrivia({ track = () => {} } = {}) {
     tick();
 
     card.replaceChildren(
-      h("p", "trivia__kicker", state.quit ? "Abandonaste" : "Intento terminado"),
+      h("p", "trivia__kicker", state.quit ? "Abandonaste" : state.strikes >= STRIKES ? `${STRIKES} strikes` : "Intento terminado"),
       h("h2", "trivia__title", SETTINGS.failTitle),
       h("p", "trivia__text", SETTINGS.failText),
       note,
@@ -277,7 +278,7 @@ export async function runTrivia({ track = () => {} } = {}) {
     );
   };
 
-  const showPassed = (score, trap) =>
+  const showPassed = (score, strikes) =>
     new Promise((resolve) => {
       top.replaceChildren();
       const btn = h("button", "trivia__btn", "Abrir mi página");
@@ -290,9 +291,9 @@ export async function runTrivia({ track = () => {} } = {}) {
         resolve();
       });
       card.replaceChildren(
-        h("p", "trivia__kicker", `${score} de ${REGULAR}`),
-        h("h2", "trivia__title", trap ? SETTINGS.trapTitle : SETTINGS.passTitle),
-        h("p", "trivia__text", trap ? SETTINGS.trapText : SETTINGS.passText),
+        h("p", "trivia__kicker", `${score} de ${REGULAR} · ${strikes} ${strikes === 1 ? "strike" : "strikes"}`),
+        h("h2", "trivia__title", SETTINGS.trapTitle),
+        h("p", "trivia__text", SETTINGS.trapText),
         btn
       );
       btn.focus();
@@ -359,18 +360,19 @@ export async function runTrivia({ track = () => {} } = {}) {
 
   async function conclude() {
     const { score, finalOk } = state;
-    const ok = finalOk || (score / REGULAR) * 100 >= SETTINGS.passPercent;
+    const strikes = state.strikes || 0;
+    const ok = finalOk && strikes < STRIKES;
     await swap();
     if (ok) {
-      state = { status: "passed", score, finalOk: !!finalOk };
+      state = { status: "passed", score, strikes, finalOk: true };
       write(state);
-      track("trivia_passed", { score, total: REGULAR, final: !!finalOk });
-      if (finalOk) burst();
-      return showPassed(score, finalOk);
+      track("trivia_passed", { score, total: REGULAR, strikes });
+      burst();
+      return showPassed(score, strikes);
     }
-    state = { status: "failed", until: Date.now() + SETTINGS.cooldownHours * HOUR, score };
+    state = { status: "failed", until: Date.now() + SETTINGS.cooldownHours * HOUR, score, strikes };
     write(state);
-    track("trivia_failed", { score, total: REGULAR });
+    track("trivia_failed", { score, total: REGULAR, strikes });
     showFailed();
     return hang();
   }
@@ -442,7 +444,7 @@ export async function runTrivia({ track = () => {} } = {}) {
         if (layout !== "chips") b.append(h("span", "t-check"));
       }
       b.addEventListener("click", () => {
-        if (!multi) return answer(!!o.correct, b);
+        if (!multi) return answer(!!o.correct, b, reveal());
         buzz(6);
         if (chosen.has(o)) chosen.delete(o);
         else chosen.add(o);
@@ -455,12 +457,16 @@ export async function runTrivia({ track = () => {} } = {}) {
       return b;
     });
     card.append(wrap);
+    const reveal = () => ({
+      text: opts.filter((o) => o.correct).map((o) => o.label).join(" y "),
+      els: buttons.filter((_, k) => opts[k].correct),
+    });
     if (multi) {
       go.type = "button";
       go.disabled = true;
       go.addEventListener("click", () => {
         const ok = opts.every((o) => chosen.has(o) === !!o.correct);
-        answer(ok, buttons.filter((_, k) => chosen.has(opts[k])));
+        answer(ok, buttons.filter((_, k) => chosen.has(opts[k])), reveal());
       });
       card.append(go);
     }
@@ -568,7 +574,7 @@ export async function runTrivia({ track = () => {} } = {}) {
     go.type = "button";
     go.addEventListener("click", () => {
       const now = [...list.children].map((row) => itemOf.get(row));
-      answer(now.every((it, k) => it === q.items[k]), go);
+      answer(now.every((it, k) => it === q.items[k]), go, { text: q.items.map((it) => it.label).join(" › ") });
     });
     card.append(h("p", "t-order__end", `↑ ${q.top}`), list, h("p", "t-order__end", `↓ ${q.bottom}`), go);
     onKey = (e) => e.key === "Enter" && go.click();
@@ -593,7 +599,10 @@ export async function runTrivia({ track = () => {} } = {}) {
     const go = h("button", "trivia__btn", "Fijar fecha");
     go.type = "button";
     go.disabled = true;
-    go.addEventListener("click", () => answer(`${pad(month + 1)}-${pad(day)}` === q.correct, go));
+    const [cm, cd] = q.correct.split("-").map(Number);
+    go.addEventListener("click", () =>
+      answer(`${pad(month + 1)}-${pad(day)}` === q.correct, go, { text: `${cd} de ${MONTHS[cm - 1]}` })
+    );
 
     const update = () => {
       out.textContent = day ? `${day} de ${MONTHS[month]}` : "Ahora elige el día";
@@ -698,7 +707,8 @@ export async function runTrivia({ track = () => {} } = {}) {
 
     const go = h("button", "trivia__btn", "Fijar respuesta");
     go.type = "button";
-    go.addEventListener("click", () => answer(Math.abs(Number(range.value) - q.correct) <= q.tolerance, go));
+    const right = [q.label ? q.label(q.correct) : String(q.correct), q.sub?.(q.correct)].filter(Boolean).join(" ");
+    go.addEventListener("click", () => answer(Math.abs(Number(range.value) - q.correct) <= q.tolerance, go, { text: right }));
     if (q.art) card.append(art);
     card.append(big, range, go);
     onKey = (e) => e.key === "Enter" && go.click();
@@ -728,7 +738,11 @@ export async function runTrivia({ track = () => {} } = {}) {
       });
       field.append(b);
     });
-    go.addEventListener("click", () => answer(sel.p.id === q.correct, [go, sel.b]));
+    go.addEventListener("click", () => {
+      const p = POSITIONS.find((x) => x.id === q.correct);
+      const el = [...field.querySelectorAll(".t-pos")].find((x) => x.textContent === q.correct);
+      answer(sel.p.id === q.correct, [go, sel.b], { text: `${p.name} (${p.id})`, els: [el] });
+    });
     card.append(field, out, go);
     onKey = (e) => e.key === "Enter" && !go.disabled && go.click();
   }
@@ -743,7 +757,7 @@ export async function runTrivia({ track = () => {} } = {}) {
     go.type = "button";
     const submit = () => {
       const v = input.value.trim();
-      if (v) answer(q.accept(norm(v)), go);
+      if (v) answer(q.accept(norm(v)), go, { text: q.reveal });
     };
     go.addEventListener("click", submit);
     input.addEventListener("keydown", (e) => e.key === "Enter" && submit());
@@ -763,24 +777,58 @@ export async function runTrivia({ track = () => {} } = {}) {
 
   /* ---------- Una pregunta ---------- */
 
+  function strikesEl(n) {
+    const box = h("span", "t-strikes");
+    box.setAttribute("aria-label", `${n} de ${STRIKES} strikes`);
+    for (let k = 0; k < STRIKES; k++) box.append(h("i", k < n ? "is-on" : null, "✕"));
+    return box;
+  }
+
+  // Después de contestar se revela la respuesta correcta y se espera a "Siguiente".
   const ask = (q, i, commit) =>
     new Promise((resolve) => {
       renderTop(i, q);
       if (q.final) card.classList.add("is-final");
-      card.append(h("p", "trivia__count", q.final ? SETTINGS.finalKicker : pad(i + 1)), h("h2", "trivia__question", q.q));
+      const head = h("div", "t-qhead");
+      const strikes = strikesEl(state.strikes || 0);
+      head.append(h("p", "trivia__count", q.final ? SETTINGS.finalKicker : pad(i + 1)), strikes);
+      card.append(head, h("h2", "trivia__question", q.q));
       if (q.hint) card.append(h("p", "t-hint", q.hint));
 
       let answered = false;
-      // Se guarda el avance antes de seguir: recargar no permite volver a contestar.
-      const answer = (correct, picked) => {
+      // Se guarda el avance antes de mostrar nada: recargar no permite volver a contestar.
+      const answer = (correct, picked, reveal = {}) => {
         if (answered || over) return;
         answered = true;
-        buzz(12);
-        commit(correct);
+        const { strikes: used } = commit(correct);
+        const out = !correct && (used >= STRIKES || q.final);
         card.classList.add("is-locked");
-        [].concat(picked).forEach((n) => n?.classList.add("is-picked"));
+        [].concat(picked).forEach((n) => n?.classList.add("is-picked", correct || reveal.els?.includes(n) ? "is-right" : "is-wrong"));
+        if (!correct) reveal.els?.forEach((n) => n?.classList.add("is-correct"));
         card.querySelectorAll("button, input").forEach((n) => (n.disabled = true));
-        resolve(correct);
+        strikes.replaceWith(strikesEl(used));
+        buzz(correct ? 14 : [30, 60, 30]);
+
+        if (correct && q.final) return resolve();
+
+        const fb = h("div", `t-feedback ${correct ? "is-right" : "is-wrong"}`);
+        fb.append(
+          h("span", "t-feedback__icon", correct ? "✓" : "✕"),
+          h("p", "t-feedback__title", correct ? "Correcto" : out ? (q.final ? "Fallaste la final" : `Strike ${used}. Estás fuera.`) : `Strike ${used} de ${STRIKES}`)
+        );
+        if (!correct && reveal.text) {
+          const ans = h("p", "t-feedback__answer", "La respuesta era: ");
+          ans.append(h("strong", null, reveal.text));
+          fb.append(ans);
+        }
+        const next = h("button", "trivia__btn", out ? "Ver resultado" : "Siguiente");
+        next.type = "button";
+        next.addEventListener("click", () => resolve(), { once: true });
+        fb.append(next);
+        card.append(fb);
+        requestAnimationFrame(() => fb.scrollIntoView({ block: "nearest", behavior: "smooth" }));
+        onKey = (e) => e.key === "Enter" && next.click();
+        next.focus({ preventScroll: true });
       };
       BUILD[q.type](q, answer);
     });
@@ -805,16 +853,19 @@ export async function runTrivia({ track = () => {} } = {}) {
         h("p", "trivia__kicker", SETTINGS.kicker),
         h("h2", "trivia__title", SETTINGS.title),
         h("p", "trivia__text", SETTINGS.intro),
-        h("p", "trivia__count", `${TOTAL} preguntas · un solo intento`),
+        h("p", "trivia__count", `${TOTAL} preguntas · ${STRIKES} strikes · un solo intento`),
         start
       );
       start.focus();
     });
     const regular = QUESTIONS.filter((q) => !q.final).map((q) => q.id);
-    state = { status: "playing", order: [...shuffle(regular), FINAL.id], i: 0, score: 0 };
+    state = { status: "playing", order: [...shuffle(regular), FINAL.id], i: 0, score: 0, strikes: 0 };
     write(state);
     track("trivia_started");
   }
+
+  // Si recargó justo después de su quinto strike (o de fallar la final), va directo al resultado.
+  if ((state.strikes || 0) >= STRIKES || state.finalOk === false) return conclude();
 
   for (let i = state.i; i < TOTAL; i++) {
     const q = BY_ID.get(state.order[i]);
@@ -835,12 +886,14 @@ export async function runTrivia({ track = () => {} } = {}) {
         ...state,
         i: i + 1,
         score: state.score + (ok && !q.final ? 1 : 0),
+        strikes: (state.strikes || 0) + (ok ? 0 : 1),
         finalOk: q.final ? ok : state.finalOk,
       };
       write(state);
+      return state;
     });
-    await wait(q.final ? 300 : 520);
     if (over) return hang();
+    if (state.strikes >= STRIKES || (q.final && !state.finalOk)) break;
   }
   return conclude();
 }
