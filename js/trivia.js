@@ -46,12 +46,6 @@ function h(tag, className, text) {
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const pad = (n) => String(n).padStart(2, "0");
 
-function remaining(ms) {
-  const m = Math.max(1, Math.ceil(ms / 60000));
-  const hh = Math.floor(m / 60);
-  return hh ? `${hh} h ${m % 60} min` : `${m} min`;
-}
-
 // Imagen real o caja de placeholder si todavía no hay archivo.
 function media(src, label, className) {
   if (src) {
@@ -123,17 +117,50 @@ export async function runTrivia({ track = () => {} } = {}) {
 
   /* ---------- Pantallas de resultado ---------- */
 
+  // Cuenta atrás en vivo hasta que se cumplan las 24 h; al llegar a cero se puede reintentar.
   const showFailed = () => {
     top.replaceChildren();
-    const t = h("p", "trivia__count");
-    const tick = () => (t.textContent = `Podrás intentarlo de nuevo en ${remaining(state.until - Date.now())}.`);
+    const unit = (label) => {
+      const num = h("span", "trivia__cd-num", "00");
+      const box = h("div", "trivia__cd-unit");
+      box.append(num, h("span", "trivia__cd-label", label));
+      return [box, num];
+    };
+    const [hBox, hNum] = unit("horas");
+    const [mBox, mNum] = unit("min");
+    const [sBox, sNum] = unit("seg");
+    const clock = h("div", "trivia__cd");
+    clock.setAttribute("role", "timer");
+    clock.append(hBox, h("span", "trivia__cd-sep", ":"), mBox, h("span", "trivia__cd-sep", ":"), sBox);
+    const note = h("p", "trivia__count", "Para volver a intentarlo");
+    const again = h("button", "trivia__btn", "Intentar de nuevo");
+    again.type = "button";
+    again.hidden = true;
+    again.addEventListener("click", () => location.reload());
+
+    const timer = setInterval(tick, 1000);
+    function tick() {
+      const left = Math.max(0, state.until - Date.now());
+      const sec = Math.ceil(left / 1000);
+      hNum.textContent = pad(Math.floor(sec / 3600));
+      mNum.textContent = pad(Math.floor((sec % 3600) / 60));
+      sNum.textContent = pad(sec % 60);
+      if (!left) {
+        clearInterval(timer);
+        note.textContent = "Ya puedes intentarlo de nuevo";
+        again.hidden = false;
+        again.focus();
+      }
+    }
     tick();
-    setInterval(tick, 30000);
+
     card.replaceChildren(
-      h("p", "trivia__kicker", "Intento terminado"),
+      h("p", "trivia__kicker", state.quit ? "Abandonaste" : "Intento terminado"),
       h("h2", "trivia__title", SETTINGS.failTitle),
       h("p", "trivia__text", SETTINGS.failText),
-      t
+      note,
+      clock,
+      again
     );
   };
 

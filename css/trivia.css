@@ -263,3 +263,24 @@
 @media (prefers-reduced-motion: reduce) {
   .trivia__card, .is-picked { animation: none; }
 }
+
+/* Cuenta atrás de las 24 h */
+.trivia__cd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 0 22px;
+  font-family: var(--serif);
+  font-variant-numeric: tabular-nums;
+}
+.trivia__cd-unit { display: grid; justify-items: center; min-width: 1.5ch; }
+.trivia__cd-num { font-size: clamp(54px, 17vw, 84px); line-height: 1; }
+.trivia__cd-sep { font-size: clamp(44px, 14vw, 70px); line-height: 1.05; color: var(--rose-400); opacity: 0.7; }
+.trivia__cd-label {
+  margin-top: 6px;
+  font: 500 11px var(--sans);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
