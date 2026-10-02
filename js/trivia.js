@@ -2,9 +2,9 @@
 // Cada intento mezcla las preguntas (la final siempre va al último).
 // Estado en localStorage: jugando (se retoma al recargar con el mismo orden), fallado (espera 24 h) o pasado.
 
-import { QUESTIONS, ROUNDS, SETTINGS } from "./trivia-questions.js?v=4";
+import { QUESTIONS, ROUNDS, SETTINGS } from "./trivia-questions.js?v=5";
 
-const KEY = "ari-trivia-v3";
+const KEY = "ari-trivia-v4";
 const IMG_KEY = "ari-trivia-img";
 const HOUR = 3_600_000;
 const TOTAL = QUESTIONS.length;
@@ -32,7 +32,7 @@ const store = {
 
 // Subir el número de la clave reinicia el progreso de todos; las claves anteriores se limpian.
 try {
-  ["ari-trivia", "ari-trivia-v2"].forEach((k) => localStorage.removeItem(k));
+  ["ari-trivia", "ari-trivia-v2", "ari-trivia-v3"].forEach((k) => localStorage.removeItem(k));
 } catch {}
 
 const read = () => store.get(KEY);
