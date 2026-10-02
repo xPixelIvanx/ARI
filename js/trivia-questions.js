@@ -1,14 +1,18 @@
-// Preguntas de la trivia. Todo lo que dice "PLACEHOLDER" se reemplaza con lo real.
+// Preguntas de la trivia. Se mezclan cada vez que empieza un intento (la final siempre va al último).
 //
-// Tipos de pregunta (los helpers de abajo arman cada uno):
-//   choice(q, [opciones], correcta, imagen?)   opción múltiple (con imagen opcional arriba)
-//   grid(q, [{ src, label }], correcta)         elegir la foto correcta (2 a 4 fotos)
-//   tf(q, true | false)                         verdad o mentira
-//   text(q, ["respuesta", "otra válida"])       respuesta escrita (ignora mayúsculas y acentos)
-//   slider(q, { min, max, step, correct, tolerance, unit })   número aproximado
+// Tipos:
+//   pick    una sola respuesta. `layout`: list | grid | vinyl | duo | chips | signs | swatch | matchup | playlist
+//   multi   varias respuestas (hay que marcar exactamente las correctas)
+//   order   ordenar arrastrando (items en el orden correcto; se muestran revueltos)
+//   date    calendario; `correct` es "MM-DD"
+//   slider  número; `tolerance` es cuánto se puede desviar
+//   field   posición en un campo de americano; `correct` es la sigla
+//   text    respuesta escrita (solo la final)
 //
-// "correcta" es la posición desde 0. Las imágenes van en assets/trivia/ (ej. "assets/trivia/7.jpg");
-// si dejas src vacío ("") se ve una caja de placeholder.
+// En cada opción la correcta lleva `correct: true`. Imágenes: `wiki` (título de Wikipedia en inglés,
+// la foto se busca sola), `img` (URL directa), `svg`, `icon` (emoji) o `swatch` (color).
+
+import { barbell, hoodie, jersey } from "./trivia-art.js";
 
 export const SETTINGS = {
   passPercent: 70,
@@ -16,14 +20,18 @@ export const SETTINGS = {
   perRound: 10,
   kicker: "Desbloqueo",
   title: "¿Quieres recuperar tu página? Gánatela.",
-  intro: "Demuestra que te importan las cosas. 50 preguntas sobre mí, un solo intento, cero trampas.",
+  intro: "Demuestra que te importan las cosas. 50 preguntas sobre mí, en desorden, un solo intento y cero trampas.",
   failTitle: "Ni modo, no lo lograste",
   failText: "Vuelve a intentar en 24 horas.",
   passTitle: "Ok, sí te importa",
   passText: "Lo lograste. Tu página te estaba esperando.",
+  finalKicker: "Pregunta final",
+  finalTitle: "Esta decide todo.",
+  finalText: "Olvídate del puntaje. Si fallas esta, se acabó.",
+  trapTitle: "Era trampa",
+  trapText: "La única pregunta que importaba era la última. Bienvenida de vuelta.",
 };
 
-// Una por cada bloque de `perRound` preguntas.
 export const ROUNDS = [
   { name: "Calentamiento", blurb: "Lo básico. Si fallas aquí, ni sigas." },
   { name: "Lo que se supone que sabes", blurb: "Cosas que he dicho mil veces." },
@@ -32,73 +40,611 @@ export const ROUNDS = [
   { name: "La última, no la riegues", blurb: "Todo lo que has acumulado se define aquí." },
 ];
 
-const PH = ["PLACEHOLDER A", "PLACEHOLDER B", "PLACEHOLDER C", "PLACEHOLDER D"];
-const PH_GRID = ["A", "B", "C", "D"].map((label) => ({ src: "", label: `Foto ${label}` }));
+const nfl = (abbr) => `https://a.espncdn.com/i/teamlogos/nfl/500/${abbr}.png`;
+const poke = (id) => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+const flag = (cc) => `https://flagcdn.com/w320/${cc}.png`;
+const devicon = (n) => `https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${n}/${n}-original.svg`;
 
-const choice = (q, options = PH, correct = 0, image = "") => ({ type: "choice", q, options, correct, image });
-const grid = (q, images = PH_GRID, correct = 0) => ({ type: "grid", q, images, correct });
-const tf = (q, correct = true) => ({ type: "tf", q, correct });
-const text = (q, answer = ["placeholder"]) => ({ type: "text", q, answer });
-const slider = (q, o = {}) => ({ type: "slider", q, min: 0, max: 100, step: 1, correct: 50, tolerance: 5, unit: "", ...o });
+const STARTERS = [null, [1, 4, 7], [152, 155, 158], [252, 255, 258], [387, 390, 393], [495, 498, 501], [650, 653, 656], [722, 725, 728], [810, 813, 816], [906, 909, 912]];
+const REGIONS = [null, "Kanto", "Johto", "Hoenn", "Sinnoh", "Teselia", "Kalos", "Alola", "Galar", "Paldea"];
+
+const BURROW = jersey({ base: "#111", sleeve: "#fb4f14", number: 9, num: "#fff", outline: "#fb4f14", edge: "rgba(255,255,255,.3)" });
+const HERBERT = jersey({ base: "#5aa9e6", sleeve: "#5aa9e6", number: 10, num: "#fff", outline: "#002a5e", stripe: "#ffc20e" });
+const LAMB = jersey({ base: "#f4f4f4", sleeve: "#f4f4f4", number: 88, num: "#041e42", outline: "#869397", stripe: "#041e42" });
+const GIBBS = jersey({ base: "#0076b6", sleeve: "#0076b6", number: 26, num: "#fff", outline: "#b0b7bc", stripe: "#fff" });
 
 export const QUESTIONS = [
-  // Ronda 1
-  choice("¿Cuál es mi comida favorita?"),
-  tf("Me gusta madrugar."),
-  choice("¿Cuál es mi color favorito?"),
-  grid("¿Cuál de estas fotos soy yo de niño?"),
-  text("¿Cuál era mi apodo de chiquito?"),
-  choice("¿En qué mes es mi cumpleaños?"),
-  slider("¿Cuántos años tengo?", { min: 15, max: 40, correct: 20, tolerance: 0, unit: "años" }),
-  choice("¿Qué es lo que más me da miedo?"),
-  tf("Prefiero quedarme en casa que salir."),
-  choice("¿Qué tomo siempre?"),
-
-  // Ronda 2
-  choice("¿Cuál es mi película o serie favorita?", PH, 0, ""),
-  choice("¿Qué hago cuando estoy nervioso?"),
-  tf("Soy de los que contestan los mensajes al instante."),
-  grid("¿Cuál de estos lugares es mi favorito?"),
-  text("¿Cómo se llama mi mejor amigo?"),
-  choice("¿Qué canción me recuerda a ti?"),
-  slider("¿A qué hora me duermo normalmente?", { min: 20, max: 28, correct: 24, tolerance: 1, unit: "h (24 = medianoche)" }),
-  choice("¿Cuál es mi mayor sueño?"),
-  tf("Me da pena bailar."),
-  choice("¿Qué es lo que más me molesta?"),
-
-  // Ronda 3
-  choice("¿Cuál es mi lugar favorito en el mundo?", PH, 0, ""),
-  choice("¿Qué fue lo primero que pensé cuando te conocí?"),
-  tf("Soy más de perros que de gatos."),
-  grid("¿Cuál de estos regalos me encantaría más?"),
-  text("¿Cuál es mi comida de antojo a las 2 a. m.?"),
-  choice("¿Cuál es mi mayor inseguridad?"),
-  slider("¿Cuántas veces he viajado en avión?", { min: 0, max: 20, correct: 2, tolerance: 1 }),
-  choice("¿Qué me hace reír sin falta?"),
-  tf("Soy buen cocinero."),
-  choice("¿Qué plan perfecto tengo para un domingo?"),
-
-  // Ronda 4
-  choice("¿Qué hago cuando estoy enojado?"),
-  choice("¿Cuál fue el mejor día que hemos pasado juntos?"),
-  tf("Prefiero el mar que la montaña."),
-  grid("¿Cuál de estas es mi playera favorita?"),
-  text("¿Cómo se llama mi primera mascota (o la que quise tener)?"),
-  choice("¿Qué es lo que más valoro en una persona?"),
-  slider("¿Cuántas horas duermo en promedio?", { min: 3, max: 12, correct: 7, tolerance: 1, unit: "h" }),
-  choice("¿Qué animal soy según yo?"),
-  tf("Me cuesta pedir perdón."),
-  choice("¿Qué quiero que hagamos algún día juntos?"),
-
-  // Ronda 5
-  choice("¿Cuál es mi manera de demostrar que me importas?"),
-  choice("¿Qué es lo que más extraño cuando no estamos juntos?"),
-  tf("Me acuerdo de todas las fechas importantes."),
-  grid("¿Cuál de estas fue nuestra primera foto juntos?"),
-  text("¿Qué día nos conocimos? (día y mes)"),
-  choice("¿Qué cosa nunca te he dicho que me encanta de ti?"),
-  slider("¿Cuántos días llevamos desde que nos conocimos?", { min: 0, max: 800, step: 5, correct: 100, tolerance: 15, unit: "días" }),
-  choice("¿Qué es lo que más me dolió de la pelea?"),
-  tf("Quiero arreglar las cosas."),
-  choice("¿Qué es lo que más quiero que entiendas?"),
+  {
+    id: "88",
+    type: "pick",
+    layout: "grid",
+    aspect: "portrait",
+    q: "¿Qué jugador NO usó el 88 en los Cowboys?",
+    options: [
+      { label: "CeeDee Lamb", wiki: "CeeDee Lamb" },
+      { label: "Michael Irvin", wiki: "Michael Irvin" },
+      { label: "Dez Bryant", wiki: "Dez Bryant" },
+      { label: "George Pickens", wiki: "George Pickens", correct: true },
+    ],
+  },
+  {
+    id: "bb-album",
+    type: "pick",
+    layout: "vinyl",
+    q: "¿Cuál es mi álbum favorito de Bad Bunny?",
+    options: [
+      { label: "Nadie Sabe Lo Que Va a Pasar Mañana", wiki: "Nadie Sabe Lo Que Va a Pasar Mañana", correct: true },
+      { label: "Un Verano Sin Ti", wiki: "Un Verano Sin Ti" },
+      { label: "YHLQMDLG", wiki: "YHLQMDLG" },
+      { label: "DeBÍ TiRAR MáS FOToS", wiki: "Debí Tirar Más Fotos" },
+    ],
+  },
+  { id: "cumple", type: "date", q: "¿Cuándo es mi cumpleaños?", year: 2005, correct: "12-08" },
+  {
+    id: "comida",
+    type: "pick",
+    layout: "grid",
+    aspect: "square",
+    q: "¿Cuál es mi comida favorita?",
+    options: [
+      { label: "Hamburguesas", wiki: "Hamburger", correct: true },
+      { label: "Pizza", wiki: "Pizza" },
+      { label: "Tacos", wiki: "Taco" },
+      { label: "Sushi", wiki: "Sushi" },
+    ],
+  },
+  {
+    id: "color",
+    type: "pick",
+    layout: "swatch",
+    q: "¿Cuál es mi color favorito?",
+    options: [
+      { label: "Naranja", swatch: "#f2701c", correct: true },
+      { label: "Azul", swatch: "#2f6fde" },
+      { label: "Rojo", swatch: "#d93030" },
+      { label: "Verde", swatch: "#2e9e5b" },
+      { label: "Morado", swatch: "#7b4bd6" },
+      { label: "Negro", swatch: "#141213" },
+      { label: "Amarillo", swatch: "#f2c230" },
+      { label: "Rosa", swatch: "#e86fa0" },
+    ],
+  },
+  {
+    id: "dune",
+    type: "pick",
+    layout: "grid",
+    aspect: "portrait",
+    q: "¿Cuál es mi personaje favorito de Dune?",
+    options: [
+      { label: "Paul Atreides", wiki: "Paul Atreides", correct: true },
+      { label: "Stilgar", wiki: "Stilgar" },
+      { label: "Duncan Idaho", wiki: "Duncan Idaho" },
+      { label: "Chani", wiki: "Chani (character)" },
+    ],
+  },
+  {
+    id: "starwars",
+    type: "pick",
+    layout: "grid",
+    aspect: "poster",
+    q: "¿Cuál es mi película favorita de Star Wars?",
+    options: [
+      { label: "Episodio III: La venganza de los Sith", wiki: "Star Wars: Episode III – Revenge of the Sith", correct: true },
+      { label: "Episodio V: El Imperio contraataca", wiki: "The Empire Strikes Back" },
+      { label: "Episodio IV: Una nueva esperanza", wiki: "Star Wars (film)" },
+      { label: "Rogue One", wiki: "Rogue One" },
+    ],
+  },
+  {
+    id: "vinilos",
+    type: "pick",
+    layout: "vinyl",
+    q: "¿Cuál de estos vinilos NO tengo?",
+    options: [
+      { label: "DAMN.", sub: "Kendrick Lamar", wiki: "Damn (Kendrick Lamar album)" },
+      { label: "I AM MUSIC", sub: "Playboi Carti", wiki: "Music (Playboi Carti album)" },
+      { label: "good kid, m.A.A.d city", sub: "Edición normal", wiki: "Good Kid, M.A.A.D City", correct: true },
+      { label: "CHROMAKOPIA", sub: "Tyler, the Creator", wiki: "Chromakopia" },
+    ],
+  },
+  {
+    id: "carro",
+    type: "pick",
+    layout: "grid",
+    aspect: "wide",
+    q: "¿Qué carro tengo?",
+    options: [
+      { label: "Subaru Crosstrek 2024", wiki: "Subaru Crosstrek", correct: true },
+      { label: "Mazda CX-30", wiki: "Mazda CX-30" },
+      { label: "Toyota RAV4", wiki: "Toyota RAV4" },
+      { label: "Honda HR-V", wiki: "Honda HR-V" },
+    ],
+  },
+  {
+    id: "jerseys",
+    type: "pick",
+    layout: "grid",
+    aspect: "square",
+    q: "¿Qué jersey NO tengo?",
+    options: [
+      { label: "Joe Burrow #9", svg: BURROW },
+      { label: "Justin Herbert #10", svg: HERBERT },
+      { label: "CeeDee Lamb #88", svg: LAMB },
+      { label: "Jahmyr Gibbs #26", svg: GIBBS, correct: true },
+    ],
+  },
+  {
+    id: "qb",
+    type: "pick",
+    layout: "grid",
+    aspect: "portrait",
+    q: "¿Cómo se llama el QB de los Cowboys?",
+    options: [
+      { label: "Dak Prescott", wiki: "Dak Prescott", correct: true },
+      { label: "Tony Romo", wiki: "Tony Romo" },
+      { label: "Cooper Rush", wiki: "Cooper Rush" },
+      { label: "Troy Aikman", wiki: "Troy Aikman" },
+    ],
+  },
+  {
+    id: "signo",
+    type: "pick",
+    layout: "signs",
+    shuffle: false,
+    q: "¿Qué signo zodiacal soy?",
+    options: [
+      ["Aries", "♈"], ["Tauro", "♉"], ["Géminis", "♊"], ["Cáncer", "♋"], ["Leo", "♌"], ["Virgo", "♍"],
+      ["Libra", "♎"], ["Escorpio", "♏"], ["Sagitario", "♐"], ["Capricornio", "♑"], ["Acuario", "♒"], ["Piscis", "♓"],
+    ].map(([label, s]) => ({ label, icon: `${s}︎`, correct: label === "Sagitario" })),
+  },
+  {
+    id: "pokegen",
+    type: "slider",
+    q: "¿Hasta qué generación de Pokémon me sé todos de memoria?",
+    min: 1,
+    max: 9,
+    step: 1,
+    correct: 4,
+    tolerance: 0,
+    label: (v) => `Gen ${v}`,
+    sub: (v) => REGIONS[v],
+    art: (v) => ({ imgs: STARTERS[v].map(poke) }),
+    preload: STARTERS.flat().filter(Boolean).map(poke),
+  },
+  {
+    id: "bench",
+    type: "slider",
+    q: "¿Cuánto es mi PR en press de banca? (1 rep)",
+    min: 20,
+    max: 160,
+    step: 5,
+    correct: 90,
+    tolerance: 5,
+    label: (v) => `${v} kg`,
+    art: (v) => ({ svg: barbell(v) }),
+  },
+  {
+    id: "sueno",
+    type: "pick",
+    layout: "grid",
+    aspect: "wide",
+    q: "¿Cuál es mi carro soñado?",
+    options: [
+      { label: "McLaren P1", wiki: "McLaren P1", correct: true },
+      { label: "LaFerrari", wiki: "LaFerrari" },
+      { label: "Porsche 918 Spyder", wiki: "Porsche 918 Spyder" },
+      { label: "Bugatti Chiron", wiki: "Bugatti Chiron" },
+    ],
+  },
+  {
+    id: "pokemon",
+    type: "pick",
+    layout: "grid",
+    aspect: "square",
+    q: "¿Cuál es mi Pokémon favorito?",
+    options: [
+      { label: "Dragonite", img: poke(149), contain: true, correct: true },
+      { label: "Charizard", img: poke(6), contain: true },
+      { label: "Garchomp", img: poke(445), contain: true },
+      { label: "Lucario", img: poke(448), contain: true },
+    ],
+  },
+  {
+    id: "odio",
+    type: "pick",
+    layout: "grid",
+    aspect: "square",
+    q: "¿Qué comida odio?",
+    options: [
+      { label: "Nueces", wiki: "Walnut", correct: true },
+      { label: "Brócoli", wiki: "Broccoli" },
+      { label: "Champiñones", wiki: "Agaricus bisporus" },
+      { label: "Aceitunas", wiki: "Olive" },
+    ],
+  },
+  {
+    id: "dulce",
+    type: "pick",
+    layout: "duo",
+    q: "¿Dulce o salado?",
+    options: [
+      { label: "Dulce", icon: "🍩", bg: "linear-gradient(160deg, #f7a8c4, #b8457a)", correct: true },
+      { label: "Salado", icon: "🍟", bg: "linear-gradient(160deg, #f6c453, #c46a1c)" },
+    ],
+  },
+  {
+    id: "equipos",
+    type: "order",
+    q: "Ordena los equipos: del que mejor me cae al que peor me cae.",
+    top: "Me cae mejor",
+    bottom: "Me cae peor",
+    items: [
+      { label: "Cowboys", img: nfl("dal") },
+      { label: "Bengals", img: nfl("cin") },
+      { label: "Bills", img: nfl("buf") },
+      { label: "Lions", img: nfl("det") },
+      { label: "Chargers", img: nfl("lac") },
+      { label: "Rams", img: nfl("lar") },
+    ],
+  },
+  {
+    id: "rapero",
+    type: "pick",
+    layout: "grid",
+    aspect: "round",
+    q: "¿Quién es mi rapero favorito?",
+    options: [
+      { label: "Kendrick Lamar", wiki: "Kendrick Lamar", correct: true },
+      { label: "Kanye West", wiki: "Kanye West" },
+      { label: "Drake", wiki: "Drake (musician)" },
+      { label: "J. Cole", wiki: "J. Cole" },
+    ],
+  },
+  {
+    id: "productor",
+    type: "pick",
+    layout: "grid",
+    aspect: "round",
+    q: "¿Quién es mi productor favorito?",
+    options: [
+      { label: "Kanye West", wiki: "Kanye West", correct: true },
+      { label: "Metro Boomin", wiki: "Metro Boomin" },
+      { label: "Pharrell Williams", wiki: "Pharrell Williams" },
+      { label: "Dr. Dre", wiki: "Dr. Dre" },
+    ],
+  },
+  {
+    id: "artista",
+    type: "multi",
+    layout: "grid",
+    aspect: "round",
+    q: "¿Quién es mi artista favorito?",
+    hint: "Ojo: puede haber más de una respuesta.",
+    options: [
+      { label: "Kendrick Lamar", wiki: "Kendrick Lamar", correct: true },
+      { label: "Bad Bunny", wiki: "Bad Bunny", correct: true },
+      { label: "Kanye West", wiki: "Kanye West" },
+      { label: "Playboi Carti", wiki: "Playboi Carti" },
+    ],
+  },
+  {
+    id: "galerias",
+    type: "pick",
+    layout: "grid",
+    aspect: "square",
+    q: "¿Qué traía puesto en nuestra date en Galerías Atizapán?",
+    options: [
+      { label: "Jersey de Burrow", svg: BURROW, correct: true },
+      { label: "Jersey de Herbert", svg: HERBERT },
+      { label: "Hoodie negra", svg: hoodie("#1b1a1b", "rgba(255,255,255,.35)") },
+      { label: "Hoodie gris claro", svg: hoodie("#c9c6c8") },
+    ],
+  },
+  {
+    id: "gym",
+    type: "multi",
+    layout: "chips",
+    q: "¿Qué grupos musculares hicimos la primera vez que fuimos juntos al gym?",
+    hint: "Marca todos los que hicimos.",
+    options: [
+      { label: "Pecho", correct: true },
+      { label: "Hombro", correct: true },
+      { label: "Tríceps", correct: true },
+      { label: "Espalda" },
+      { label: "Bíceps" },
+      { label: "Pierna" },
+      { label: "Abdomen" },
+      { label: "Glúteo" },
+    ],
+  },
+  {
+    id: "serie",
+    type: "pick",
+    layout: "grid",
+    aspect: "poster",
+    q: "¿Cuál fue la primera serie que vimos juntos?",
+    options: [
+      { label: "Malcolm", wiki: "Malcolm in the Middle", correct: true },
+      { label: "Friends", wiki: "Friends" },
+      { label: "The Big Bang Theory", wiki: "The Big Bang Theory" },
+      { label: "Rick y Morty", wiki: "Rick and Morty" },
+    ],
+  },
+  {
+    id: "conciertos",
+    type: "multi",
+    layout: "grid",
+    aspect: "round",
+    compact: true,
+    q: "¿A qué conciertos he ido?",
+    hint: "Marca todos.",
+    options: [
+      { label: "Kanye West", wiki: "Kanye West", correct: true },
+      { label: "Kendrick Lamar", wiki: "Kendrick Lamar", correct: true },
+      { label: "Bad Bunny", wiki: "Bad Bunny", correct: true },
+      { label: "Fuerza Regida", wiki: "Fuerza Regida", correct: true },
+      { label: "Travis Scott", wiki: "Travis Scott" },
+      { label: "Peso Pluma", wiki: "Peso Pluma" },
+      { label: "The Weeknd", wiki: "The Weeknd" },
+      { label: "Drake", wiki: "Drake (musician)" },
+    ],
+  },
+  {
+    id: "exclusiva",
+    type: "pick",
+    layout: "playlist",
+    q: "¿Qué canción exclusiva me tocó en el concierto de Bad Bunny?",
+    options: [
+      { label: "Where She Goes", sub: "Bad Bunny", wiki: "Where She Goes", correct: true },
+      { label: "Soy Peor", sub: "Bad Bunny", wiki: "Soy Peor" },
+      { label: "Vete", sub: "Bad Bunny", wiki: "Vete (Bad Bunny song)" },
+      { label: "Safaera", sub: "Bad Bunny, Jowell & Randy, Ñengo Flow", wiki: "Safaera" },
+    ],
+  },
+  {
+    id: "juego",
+    type: "pick",
+    layout: "grid",
+    aspect: "poster",
+    q: "¿A qué juego le he dedicado más horas?",
+    options: [
+      { label: "Rainbow Six Siege", wiki: "Tom Clancy's Rainbow Six Siege", correct: true },
+      { label: "Minecraft", wiki: "Minecraft" },
+      { label: "Terraria", wiki: "Terraria" },
+      { label: "Madden NFL", wiki: "Madden NFL" },
+    ],
+  },
+  {
+    id: "dc",
+    type: "pick",
+    layout: "grid",
+    aspect: "portrait",
+    q: "¿Cuál es mi superhéroe favorito de DC?",
+    options: [
+      { label: "Flash", wiki: "Flash (Barry Allen)", correct: true },
+      { label: "Batman", wiki: "Batman" },
+      { label: "Superman", wiki: "Superman" },
+      { label: "Green Lantern", wiki: "Green Lantern" },
+    ],
+  },
+  {
+    id: "marvel",
+    type: "pick",
+    layout: "grid",
+    aspect: "portrait",
+    q: "¿Cuál es mi superhéroe favorito de Marvel?",
+    options: [
+      { label: "Spider-Man", wiki: "Spider-Man", correct: true },
+      { label: "Iron Man", wiki: "Iron Man" },
+      { label: "Capitán América", wiki: "Captain America" },
+      { label: "Thor", wiki: "Thor (Marvel Comics)" },
+    ],
+  },
+  {
+    id: "vivir",
+    type: "pick",
+    layout: "grid",
+    aspect: "wide",
+    q: "¿Dónde me gustaría vivir?",
+    options: [
+      { label: "Estados Unidos", img: flag("us"), correct: true },
+      { label: "España", img: flag("es") },
+      { label: "Japón", img: flag("jp") },
+      { label: "Canadá", img: flag("ca") },
+    ],
+  },
+  {
+    id: "pelicula",
+    type: "pick",
+    layout: "duo",
+    aspect: "poster",
+    q: "¿Qué película me gusta más?",
+    options: [
+      { label: "Jurassic Park", wiki: "Jurassic Park (film)", correct: true },
+      { label: "Star Wars: Episodio III", wiki: "Star Wars: Episode III – Revenge of the Sith" },
+    ],
+  },
+  { id: "starbucks", type: "date", q: "¿Qué día fue nuestra date en Starbucks?", year: 2026, correct: "06-09" },
+  { id: "posicion", type: "field", q: "Si jugara americano, ¿en qué posición jugaría?", correct: "WR" },
+  { id: "gibbs", type: "field", q: "¿En qué posición juega Jahmyr Gibbs?", correct: "RB" },
+  {
+    id: "fantasy",
+    type: "pick",
+    layout: "grid",
+    aspect: "portrait",
+    q: "¿Quién es el mejor jugador de mi fantasy?",
+    options: [
+      { label: "Brock Purdy", wiki: "Brock Purdy", correct: true },
+      { label: "Jonathan Taylor", wiki: "Jonathan Taylor (American football)" },
+      { label: "Joe Burrow", wiki: "Joe Burrow" },
+      { label: "Davante Adams", wiki: "Davante Adams" },
+    ],
+  },
+  {
+    id: "odiado",
+    type: "pick",
+    layout: "list",
+    q: "¿A cuál de estos jugadores odio?",
+    options: [
+      { label: "Lamar Jackson", correct: true },
+      { label: "Christian Gonzalez" },
+      { label: "Justin Jefferson" },
+      { label: "Aaron Hernandez" },
+    ],
+  },
+  {
+    id: "kendrick",
+    type: "pick",
+    layout: "vinyl",
+    q: "¿Cuál es mi álbum favorito de Kendrick?",
+    options: [
+      { label: "DAMN.", wiki: "Damn (Kendrick Lamar album)", correct: true },
+      { label: "To Pimp a Butterfly", wiki: "To Pimp a Butterfly" },
+      { label: "good kid, m.A.A.d city", wiki: "Good Kid, M.A.A.D City" },
+      { label: "GNX", wiki: "GNX (album)" },
+    ],
+  },
+  {
+    id: "kanye",
+    type: "pick",
+    layout: "vinyl",
+    q: "¿Cuál es mi álbum favorito de Kanye?",
+    options: [
+      { label: "My Beautiful Dark Twisted Fantasy", wiki: "My Beautiful Dark Twisted Fantasy", correct: true },
+      { label: "Graduation", wiki: "Graduation (album)" },
+      { label: "The College Dropout", wiki: "The College Dropout" },
+      { label: "Yeezus", wiki: "Yeezus" },
+    ],
+  },
+  {
+    id: "kanye-antes",
+    type: "pick",
+    layout: "vinyl",
+    q: "Antes de mi favorito actual, ¿cuál era mi álbum favorito de Kanye?",
+    options: [
+      { label: "Graduation", wiki: "Graduation (album)", correct: true },
+      { label: "Late Registration", wiki: "Late Registration" },
+      { label: "808s & Heartbreak", wiki: "808s & Heartbreak" },
+      { label: "The Life of Pablo", wiki: "The Life of Pablo" },
+    ],
+  },
+  {
+    id: "perros",
+    type: "pick",
+    layout: "duo",
+    aspect: "portrait",
+    q: "¿Perros o gatos?",
+    options: [
+      { label: "Perros", wiki: "Dog", correct: true },
+      { label: "Gatos", wiki: "Cat" },
+    ],
+  },
+  {
+    id: "clima",
+    type: "pick",
+    layout: "duo",
+    q: "¿Clima frío o caliente?",
+    options: [
+      { label: "Caliente", icon: "☀️", bg: "linear-gradient(160deg, #ffb347, #e8452c)", correct: true },
+      { label: "Frío", icon: "❄️", bg: "linear-gradient(160deg, #a8d8ff, #3a6fd8)" },
+    ],
+  },
+  {
+    id: "musculo",
+    type: "pick",
+    layout: "chips",
+    q: "¿Qué grupo muscular se me da mejor?",
+    options: [
+      { label: "Tríceps", correct: true },
+      { label: "Pecho" },
+      { label: "Bíceps" },
+      { label: "Espalda" },
+      { label: "Pierna" },
+      { label: "Hombro" },
+    ],
+  },
+  {
+    id: "no-gusta",
+    type: "pick",
+    layout: "grid",
+    aspect: "round",
+    q: "¿Cuál de estos artistas NO me gusta?",
+    options: [
+      { label: "Olivia Rodrigo", wiki: "Olivia Rodrigo", correct: true },
+      { label: "Katy Perry", wiki: "Katy Perry" },
+      { label: "Lady Gaga", wiki: "Lady Gaga" },
+      { label: "Billie Eilish", wiki: "Billie Eilish" },
+    ],
+  },
+  {
+    id: "mas-escuchado",
+    type: "pick",
+    layout: "grid",
+    aspect: "round",
+    q: "¿Quién fue mi artista más escuchado en los últimos 12 meses?",
+    options: [
+      { label: "Bad Bunny", wiki: "Bad Bunny", correct: true },
+      { label: "Kendrick Lamar", wiki: "Kendrick Lamar" },
+      { label: "Playboi Carti", wiki: "Playboi Carti" },
+      { label: "Kanye West", wiki: "Kanye West" },
+    ],
+  },
+  {
+    id: "cancion",
+    type: "pick",
+    layout: "playlist",
+    q: "¿Cuál fue mi canción más escuchada en los últimos 12 meses?",
+    options: [
+      { label: "XO Tour Llif3", sub: "Lil Uzi Vert", wiki: "Luv Is Rage 2", correct: true },
+      { label: "family ties", sub: "Baby Keem, Kendrick Lamar", wiki: "The Melodic Blue" },
+      { label: "Like That", sub: "Future, Metro Boomin, Kendrick Lamar", wiki: "We Don't Trust You" },
+      { label: "Stop Breathing", sub: "Playboi Carti", wiki: "Whole Lotta Red" },
+    ],
+  },
+  {
+    id: "partido",
+    type: "pick",
+    layout: "matchup",
+    q: "¿A qué partido de la NFL NO he ido en persona?",
+    options: [
+      { label: "Chiefs vs Bills", imgs: [nfl("kc"), nfl("buf")], correct: true },
+      { label: "Cowboys vs Washington", imgs: [nfl("dal"), nfl("wsh")] },
+      { label: "Chargers vs Eagles", imgs: [nfl("lac"), nfl("phi")] },
+      { label: "49ers vs Cardinals", imgs: [nfl("sf"), nfl("ari")] },
+    ],
+  },
+  {
+    id: "semestre",
+    type: "slider",
+    q: "¿En qué semestre de prepa empecé a ir al gym?",
+    min: 1,
+    max: 6,
+    step: 1,
+    correct: 2,
+    tolerance: 0,
+    label: (v) => `${v}.º`,
+    sub: () => "semestre",
+  },
+  {
+    id: "lenguaje",
+    type: "pick",
+    layout: "grid",
+    aspect: "square",
+    q: "¿Qué lenguaje de programación aprendí primero?",
+    options: [
+      { label: "Python", img: devicon("python"), contain: true, correct: true },
+      { label: "JavaScript", img: devicon("javascript"), contain: true },
+      { label: "Java", img: devicon("java"), contain: true },
+      { label: "C++", img: devicon("cplusplus"), contain: true },
+    ],
+  },
+  {
+    id: "novia",
+    type: "text",
+    final: true,
+    q: "¿Quién es mi novia?",
+    placeholder: "Escribe su nombre",
+    // Vale Ari, Aranza, su nombre completo (o "yo").
+    accept: (v) => v.split(" ").some((w) => w === "ari" || w.startsWith("aranz") || w === "yo"),
+  },
 ];

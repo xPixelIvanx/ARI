@@ -4,6 +4,7 @@
   --fg: #f6f1f3;
   --mute: rgba(246, 241, 243, 0.55);
   --edge: rgba(246, 241, 243, 0.12);
+  --panel: rgba(246, 241, 243, 0.035);
   position: fixed;
   inset: 0;
   z-index: 250;
@@ -12,6 +13,7 @@
   align-items: center;
   padding: 0 var(--gutter) 32px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background:
     radial-gradient(70% 50% at 50% -10%, rgba(207, 106, 138, 0.22), transparent 70%),
     var(--bg);
@@ -20,10 +22,12 @@
 }
 .trivia.is-leaving { opacity: 0; pointer-events: none; }
 
+/* ---------- Barra superior ---------- */
+
 .trivia__top {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 3;
   width: min(560px, 100%);
   min-height: 74px;
   padding: 22px 0 14px;
@@ -41,7 +45,7 @@
   text-transform: uppercase;
   color: var(--mute);
 }
-.trivia__round { flex: 1; }
+.trivia__round { flex: 1; min-width: 0; margin-right: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .trivia__num { font-variant-numeric: tabular-nums; color: var(--fg); margin-right: 14px; }
 .trivia__quit {
   font: inherit;
@@ -68,6 +72,8 @@
 .trivia__modal-title { margin: 0 0 12px; font: 500 30px/1.1 var(--serif); }
 .trivia__btn--ghost { background: transparent; color: var(--fg); border: 1px solid var(--edge); }
 
+/* ---------- Tarjeta ---------- */
+
 .trivia__card {
   width: min(560px, 100%);
   margin: auto 0;
@@ -79,6 +85,9 @@
 @keyframes trivia-in {
   from { opacity: 0; transform: translate3d(0, 16px, 0); }
   to { opacity: 1; transform: none; }
+}
+@keyframes t-pop {
+  from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.97); }
 }
 
 .trivia__kicker {
@@ -105,51 +114,15 @@
 }
 .trivia__text { margin: 0 0 14px; color: var(--mute); max-width: 44ch; }
 .trivia__question {
-  margin: 0 0 26px;
+  margin: 0 0 24px;
   font-family: var(--serif);
   font-weight: 500;
   font-size: clamp(28px, 6.4vw, 38px);
   line-height: 1.12;
 }
+.trivia__card.is-final .trivia__question { font-size: clamp(42px, 12vw, 64px); }
+.t-hint { margin: -14px 0 20px; color: var(--rose-400); font-size: 13px; }
 
-.trivia__img,
-.trivia__tile-img {
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
-  border-radius: 14px;
-  margin: -6px 0 22px;
-}
-.is-placeholder {
-  display: grid;
-  place-items: center;
-  border: 1px dashed var(--edge);
-  background: repeating-linear-gradient(135deg, rgba(246, 241, 243, 0.04) 0 12px, transparent 12px 24px);
-  color: var(--mute);
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
-/* Opciones */
-.trivia__options,
-.trivia__tf { display: grid; gap: 10px; }
-.trivia__tf { grid-template-columns: 1fr 1fr; }
-
-.trivia__option {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  padding: 16px 18px;
-  border: 1px solid var(--edge);
-  border-radius: 14px;
-  background: rgba(246, 241, 243, 0.03);
-  color: var(--fg);
-  text-align: left;
-  transition: transform 0.25s var(--ease), border-color 0.25s, background 0.25s, opacity 0.3s;
-}
-.trivia__option--tf { justify-content: center; padding: 26px 12px; font-size: 18px; font-weight: 600; }
 .trivia kbd {
   display: inline-grid;
   place-items: center;
@@ -161,36 +134,374 @@
   color: var(--mute);
   flex: none;
 }
-@media (hover: hover) {
-  .trivia__option:not(:disabled):hover,
-  .trivia__tile:not(:disabled):hover { border-color: var(--rose-400); transform: translateY(-2px); }
-}
-.trivia__option:active:not(:disabled),
-.trivia__tile:active:not(:disabled) { transform: scale(0.98); }
+@media (hover: none) { .trivia kbd { display: none; } }
 
-.trivia__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.trivia__tile {
+/* ---------- Opciones (base) ---------- */
+
+.t-opts { display: grid; gap: 10px; }
+.t-opt {
   position: relative;
-  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
   border: 1px solid var(--edge);
-  border-radius: 14px;
-  overflow: hidden;
-  transition: transform 0.25s var(--ease), border-color 0.25s, opacity 0.3s;
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--fg);
+  text-align: left;
+  animation: t-pop 0.55s var(--ease) backwards;
+  animation-delay: calc(var(--k, 0) * 45ms + 80ms);
+  transition: transform 0.3s var(--ease), border-color 0.25s, background 0.25s, opacity 0.35s, filter 0.35s;
 }
-.trivia__tile .trivia__tile-img { margin: 0; border-radius: 0; aspect-ratio: 1; }
-.trivia__tile kbd { position: absolute; top: 8px; left: 8px; background: rgba(14, 12, 13, 0.7); }
+@media (hover: hover) {
+  .t-opt:not(:disabled):hover { border-color: var(--rose-400); transform: translateY(-2px); }
+}
+.t-opt:active:not(:disabled) { transform: scale(0.97); }
+.t-opt kbd { margin-left: auto; }
+.t-opt__text { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.t-opt__label { font-weight: 600; font-size: 15px; line-height: 1.25; }
+.t-opt__sub { font-size: 12.5px; color: var(--mute); }
 
-/* Se queda marcada la elegida, el resto se apaga (sin revelar si era correcta). */
-.trivia__card.is-locked .trivia__option:not(.is-picked),
-.trivia__card.is-locked .trivia__tile:not(.is-picked) { opacity: 0.3; }
+/* Al contestar: la elegida se marca y el resto se apaga (sin revelar si era correcta). */
+.trivia__card.is-locked .t-opt:not(.is-picked) { opacity: 0.25; filter: grayscale(0.7); transform: scale(0.97); }
 .is-picked { border-color: var(--rose-400) !important; background: rgba(207, 106, 138, 0.18) !important; animation: pick 0.45s var(--ease); }
 @keyframes pick {
-  0% { transform: scale(1); }
-  40% { transform: scale(1.025); }
-  100% { transform: scale(1); }
+  40% { transform: scale(1.03); }
 }
 
-/* Slider */
+/* ---------- Imágenes ---------- */
+
+.t-media {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 12px;
+  background: radial-gradient(120% 90% at 30% 10%, rgba(207, 106, 138, 0.3), rgba(246, 241, 243, 0.04));
+  flex: none;
+}
+.t-media.is-portrait { aspect-ratio: 4 / 5; }
+.t-media.is-wide { aspect-ratio: 16 / 10; }
+.t-media.is-poster { aspect-ratio: 2 / 3; }
+.t-media.is-round { border-radius: 50%; }
+.t-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.08);
+  transition: opacity 0.6s var(--ease), transform 0.9s var(--ease);
+}
+.t-media.is-portrait img,
+.t-media.is-round img { object-position: 50% 18%; }
+.t-media.is-contain { background: radial-gradient(circle at 50% 40%, rgba(246, 241, 243, 0.12), rgba(246, 241, 243, 0.03) 70%); }
+.t-media.is-contain img { object-fit: contain; padding: 12%; }
+.t-media.is-loaded img { opacity: 1; transform: none; }
+@media (hover: hover) {
+  .t-opt:not(:disabled):hover .t-media.is-loaded img { transform: scale(1.05); }
+}
+.t-media__fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 500 30px/1 var(--serif);
+  letter-spacing: 0.04em;
+  color: rgba(246, 241, 243, 0.45);
+  transition: opacity 0.4s;
+}
+.t-media.is-loaded .t-media__fallback { opacity: 0; }
+.t-media.is-svg { padding: 8%; background: radial-gradient(circle at 50% 35%, rgba(246, 241, 243, 0.14), rgba(246, 241, 243, 0.03) 70%); }
+.t-media.is-svg svg { display: block; width: 100%; height: 100%; transition: transform 0.5s var(--ease); }
+@media (hover: hover) { .t-opt:not(:disabled):hover .t-media.is-svg svg { transform: rotate(-4deg) scale(1.05); } }
+.t-media.is-icon { display: grid; place-items: center; }
+.t-media__icon { font-size: clamp(56px, 18vw, 88px); line-height: 1; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.3)); transition: transform 0.5s var(--ease); }
+
+.t-logo { width: 42px; height: 42px; object-fit: contain; flex: none; }
+.t-logo.is-empty { display: inline-grid; place-items: center; border-radius: 50%; background: var(--edge); font: 600 12px var(--sans); }
+
+/* ---------- Cuadrícula de fotos ---------- */
+
+.t-grid { grid-template-columns: 1fr 1fr; }
+.t-opt--grid { flex-direction: column; align-items: stretch; gap: 10px; padding: 8px 8px 12px; text-align: center; }
+.t-opt--grid .t-opt__text { justify-items: center; }
+.t-opt--grid kbd { position: absolute; top: 14px; left: 14px; z-index: 2; margin: 0; background: rgba(14, 12, 13, 0.72); }
+.t-grid.is-compact { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.is-compact .t-opt--grid { padding: 6px 4px 10px; gap: 8px; border-radius: 14px; }
+.is-compact .t-opt__label { font-size: 11.5px; }
+.is-compact kbd { display: none; }
+
+/* Palomita de las de varias respuestas */
+.t-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(246, 241, 243, 0.7);
+  border-radius: 50%;
+  background: rgba(14, 12, 13, 0.55);
+  transition: background 0.2s, border-color 0.2s, transform 0.3s var(--ease);
+}
+.t-check::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 3px;
+  width: 6px;
+  height: 11px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.3s var(--ease);
+}
+.is-compact .t-check { top: 6px; right: 6px; width: 20px; height: 20px; }
+.is-compact .t-check::after { left: 5px; top: 2px; width: 5px; height: 9px; }
+.t-opt.is-on { border-color: var(--rose-400); background: rgba(207, 106, 138, 0.14); }
+.t-opt.is-on .t-check { background: var(--rose-400); border-color: var(--rose-400); transform: scale(1.1); }
+.t-opt.is-on .t-check::after { transform: rotate(45deg) scale(1); }
+
+/* ---------- Vinilos ---------- */
+
+.t-vinyl { grid-template-columns: 1fr 1fr; }
+.t-opt--vinyl { flex-direction: column; align-items: stretch; gap: 12px; padding: 12px 12px 14px; overflow: hidden; }
+.t-opt--vinyl kbd { position: absolute; top: 18px; left: 18px; z-index: 2; margin: 0; background: rgba(14, 12, 13, 0.72); }
+.t-vinyl__stage { position: relative; display: block; width: 80%; }
+.t-vinyl__stage .t-media { z-index: 1; border-radius: 4px; background: linear-gradient(135deg, #3b2731, #1b1618); box-shadow: 8px 0 18px rgba(0, 0, 0, 0.5); }
+.t-vinyl__disc {
+  position: absolute;
+  top: 3%;
+  left: 3%;
+  width: 94%;
+  height: 94%;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 0deg, transparent 0 40deg, rgba(255, 255, 255, 0.1) 52deg, transparent 64deg 220deg, rgba(255, 255, 255, 0.07) 232deg, transparent 244deg),
+    radial-gradient(circle, var(--rose-400) 0 15%, #0c0b0b 15.5% 17.5%, transparent 18%),
+    repeating-radial-gradient(circle, #181617 0 2px, #242123 2px 3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  transition: left 0.7s var(--ease);
+}
+@media (hover: hover) { .t-opt--vinyl:not(:disabled):hover .t-vinyl__disc { left: 16%; } }
+.t-opt--vinyl.is-picked .t-vinyl__disc { left: 22%; animation: t-spin 1.6s linear infinite; }
+@keyframes t-spin { to { transform: rotate(360deg); } }
+
+/* ---------- Esto o aquello ---------- */
+
+.t-duo { position: relative; grid-template-columns: 1fr 1fr; gap: 12px; }
+.t-duo::after {
+  content: "o";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--edge);
+  border-radius: 50%;
+  background: var(--bg);
+  font: italic 500 20px/1 var(--serif);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.t-opt--duo { flex-direction: column; padding: 0; overflow: hidden; border-radius: 20px; }
+.t-opt--duo .t-media { border-radius: 0; aspect-ratio: 3 / 4; }
+.t-duo__label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: 44px 14px 16px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.78));
+  font: 500 24px/1.1 var(--serif);
+  text-align: center;
+}
+.t-opt--duo kbd { position: absolute; top: 12px; left: 12px; z-index: 2; margin: 0; background: rgba(14, 12, 13, 0.6); }
+@media (hover: hover) { .t-opt--duo:not(:disabled):hover .t-media__icon { transform: scale(1.14) rotate(-6deg); } }
+.trivia__card.is-locked .t-opt--duo.is-picked { transform: scale(1.03); }
+
+/* ---------- Chips ---------- */
+
+.t-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.t-opt--chips { width: auto; padding: 12px 18px; border-radius: 999px; }
+.t-opt--chips.is-on { background: var(--rose-400); border-color: var(--rose-400); color: #fff; transform: scale(1.04); }
+
+/* ---------- Signos ---------- */
+
+.t-signs { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.t-opt--signs { flex-direction: column; gap: 6px; padding: 14px 4px 10px; text-align: center; border-radius: 14px; }
+.t-sign {
+  font: 30px/1 "Apple Symbols", "Segoe UI Symbol", "Noto Sans Symbols 2", "Noto Sans Symbols", sans-serif;
+  color: var(--rose-400);
+  transition: transform 0.4s var(--ease);
+}
+.t-opt--signs .t-opt__label { font-size: 11.5px; font-weight: 500; }
+@media (hover: hover) { .t-opt--signs:not(:disabled):hover .t-sign { transform: scale(1.2); } }
+
+/* ---------- Colores ---------- */
+
+.t-swatch { grid-template-columns: repeat(4, 1fr); gap: 16px 8px; }
+.t-opt--swatch { flex-direction: column; gap: 8px; padding: 6px 0; border: 0; background: none; }
+.t-dot {
+  width: 100%;
+  max-width: 64px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2), 0 8px 20px rgba(0, 0, 0, 0.35);
+  transition: transform 0.35s var(--ease), box-shadow 0.3s;
+}
+.t-opt--swatch .t-opt__label { font-size: 12px; font-weight: 500; color: var(--mute); }
+@media (hover: hover) {
+  .t-opt--swatch:not(:disabled):hover { transform: none; }
+  .t-opt--swatch:not(:disabled):hover .t-dot { transform: scale(1.12); }
+}
+.t-opt--swatch.is-picked { background: none !important; }
+.t-opt--swatch.is-picked .t-dot { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--rose-400); transform: scale(1.14); }
+
+/* ---------- Partidos ---------- */
+
+.t-opt--matchup { gap: 16px; padding: 12px 16px; }
+.t-vs { display: flex; align-items: center; gap: 6px; flex: none; }
+.t-vs__x { font: italic 500 15px var(--serif); color: var(--mute); }
+
+/* ---------- Playlist ---------- */
+
+.t-opt--playlist { padding: 10px 16px 10px 10px; }
+.t-opt--playlist .t-media { width: 58px; border-radius: 8px; }
+
+/* ---------- Ordenar ---------- */
+
+.t-order { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.t-order__end {
+  margin: 0 0 10px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mute);
+  text-align: center;
+}
+.t-order + .t-order__end { margin: 10px 0 6px; }
+.t-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 12px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: #171415;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: t-pop 0.5s var(--ease) backwards;
+  animation-delay: calc(var(--k, 0) * 50ms + 80ms);
+  transition: transform 0.28s var(--ease), box-shadow 0.25s, border-color 0.25s;
+}
+.t-row.is-drag {
+  z-index: 2;
+  cursor: grabbing;
+  border-color: var(--rose-400);
+  background: #201b1d;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+  transition: box-shadow 0.25s, border-color 0.25s;
+}
+.t-row__grip { color: var(--mute); font-size: 16px; }
+.t-row__pos { width: 16px; font: 600 12px var(--sans); color: var(--rose-400); font-variant-numeric: tabular-nums; }
+.t-row .t-logo { width: 36px; height: 36px; }
+.t-row__label { flex: 1; font-weight: 600; }
+.t-row__btn { width: 34px; height: 34px; border: 1px solid var(--edge); border-radius: 10px; color: var(--mute); }
+.t-row__btn:disabled { opacity: 0.25; }
+.trivia__card.is-locked .t-row { opacity: 0.6; }
+
+/* ---------- Calendario ---------- */
+
+.t-months {
+  display: flex;
+  gap: 6px;
+  margin: 0 -2px 12px;
+  padding: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.t-months::-webkit-scrollbar { display: none; }
+.t-month {
+  flex: none;
+  padding: 9px 14px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  color: var(--mute);
+  font-size: 14px;
+  text-transform: capitalize;
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
+}
+.t-month.is-on { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+.t-cal { padding: 14px; border: 1px solid var(--edge); border-radius: 18px; background: var(--panel); }
+.t-cal__title { margin: 0 0 10px; font: 500 24px/1 var(--serif); text-align: center; text-transform: capitalize; }
+.t-cal__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.t-cal__dow { padding-bottom: 4px; font-size: 11px; color: var(--mute); text-align: center; }
+.t-cal__day {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  transition: background 0.2s, color 0.2s, transform 0.3s var(--ease);
+}
+.t-cal__grid.is-anim .t-cal__day { animation: t-pop 0.4s var(--ease) backwards; animation-delay: calc(var(--k) * 9ms); }
+@media (hover: hover) { .t-cal__day:not(:disabled):hover { background: rgba(246, 241, 243, 0.08); } }
+.t-cal__day.is-on { background: var(--rose-400); color: #fff; transform: scale(1.1); }
+.t-cal__out { margin: 14px 0 4px; font: 500 22px var(--serif); text-align: center; }
+
+/* ---------- Campo de americano ---------- */
+
+.t-field {
+  position: relative;
+  width: min(100%, 44vh);
+  aspect-ratio: 4 / 5;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 18px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 calc(10% - 1px), rgba(255, 255, 255, 0.16) calc(10% - 1px) 10%),
+    linear-gradient(180deg, #1f6b3a, #15502b);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.t-field__los { position: absolute; left: 0; right: 0; top: 46%; height: 2px; background: #5aa9e6; box-shadow: 0 0 12px #5aa9e6; }
+.t-pos {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #f6f1f3;
+  color: #0e0c0d;
+  font: 700 13px var(--sans);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  animation: t-pos-in 0.5s var(--ease) backwards;
+  animation-delay: calc(var(--k) * 55ms + 120ms);
+  transition: transform 0.3s var(--ease), background 0.2s, color 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.t-pos.is-wide { width: 112px; border-radius: 999px; }
+.t-pos.is-def { border: 2px solid rgba(255, 255, 255, 0.85); background: rgba(14, 12, 13, 0.25); color: #fff; }
+.t-pos.is-on { border-color: var(--rose-400); background: var(--rose-400); color: #fff; box-shadow: 0 0 0 6px rgba(227, 140, 165, 0.3); transform: translate(-50%, -50%) scale(1.15); }
+@keyframes t-pos-in { from { opacity: 0; transform: translate(-50%, -20%) scale(0.6); } }
+.t-field__out { margin: 14px 0 0; font: 500 20px var(--serif); text-align: center; }
+
+/* ---------- Slider ---------- */
+
+.t-art { display: flex; justify-content: center; align-items: center; gap: 4px; min-height: 110px; margin: 0 0 6px; }
+.t-art svg { width: 100%; max-width: 360px; height: auto; }
+.t-art__img { width: 30%; max-width: 110px; aspect-ratio: 1; object-fit: contain; opacity: 0; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.4)); transition: opacity 0.3s; }
+.t-art__img.is-ok { opacity: 1; }
 .trivia__big {
   display: flex;
   align-items: baseline;
@@ -203,6 +514,9 @@
   font-variant-numeric: tabular-nums;
 }
 .trivia__big small { font: 500 14px var(--sans); color: var(--mute); }
+.trivia__big.is-bump span { animation: t-bump 0.3s var(--ease); }
+@keyframes t-bump { 40% { transform: scale(1.06); } }
+.trivia__big span { display: inline-block; }
 .trivia__range {
   --p: 50%;
   width: 100%;
@@ -232,39 +546,37 @@
 }
 .trivia__range::-moz-range-thumb { width: 26px; height: 26px; border: 0; border-radius: 50%; background: var(--fg); }
 
-/* Texto y botones */
+/* ---------- Texto y botones ---------- */
+
 .trivia__input {
   width: 100%;
   margin-bottom: 14px;
-  padding: 16px 18px;
+  padding: 18px 20px;
   border: 1px solid var(--edge);
   border-radius: 14px;
-  background: rgba(246, 241, 243, 0.03);
+  background: var(--panel);
   color: var(--fg);
   font: inherit;
-  font-size: 18px;
+  font-size: 20px;
 }
 .trivia__input:focus { outline: 0; border-color: var(--rose-400); }
 .trivia__btn {
   display: block;
   width: 100%;
-  margin-top: 8px;
+  margin-top: 14px;
   padding: 16px 30px;
   border-radius: 14px;
   background: var(--fg);
   color: var(--bg);
   font-weight: 600;
-  transition: transform 0.25s var(--ease), opacity 0.25s;
+  transition: transform 0.25s var(--ease), opacity 0.25s, background 0.25s, color 0.25s;
 }
 .trivia__btn:active:not(:disabled) { transform: scale(0.98); }
 .trivia__btn:disabled { opacity: 0.4; }
 .trivia__card.is-locked .trivia__btn.is-picked { background: var(--rose-400); color: #fff; }
 
-@media (prefers-reduced-motion: reduce) {
-  .trivia__card, .is-picked { animation: none; }
-}
+/* ---------- Cuenta atrás de las 24 h ---------- */
 
-/* Cuenta atrás de las 24 h */
 .trivia__cd {
   display: flex;
   align-items: flex-start;
@@ -283,4 +595,23 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--mute);
+}
+
+/* ---------- Confeti al desbloquear ---------- */
+
+.t-burst { position: fixed; left: 50%; top: 42%; z-index: 6; pointer-events: none; }
+.t-burst span {
+  position: absolute;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation: t-fly 1.5s cubic-bezier(0.15, 0.7, 0.3, 1) forwards;
+}
+@keyframes t-fly {
+  from { opacity: 1; transform: translate(0, 0) rotate(0); }
+  to { opacity: 0; transform: translate(var(--x), var(--y)) rotate(var(--r)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trivia__card, .t-opt, .t-row, .t-pos, .t-cal__day, .is-picked, .t-vinyl__disc, .t-burst span { animation: none !important; }
 }
