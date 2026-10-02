@@ -2,6 +2,11 @@ import BASE_CONFIG from "./config.js";
 import { loadContent, resolveMedia } from "./content.js";
 import Lenis from "./vendor/lenis.mjs";
 
+// Trivia de un solo intento: cubre la intro hasta que se pase (no aplica en modo edición).
+const trivia = new URLSearchParams(location.search).has("editar")
+  ? null
+  : import("./trivia.js").then((m) => m.runTrivia({ track: (name, params) => track(name, params) })).catch(() => {});
+
 // modo edición (temporal)
 const editor = new URLSearchParams(location.search).has("editar") ? await import("./editor.js") : null;
 const CONFIG = editor ? await editor.loadDraft(BASE_CONFIG) : await loadContent(BASE_CONFIG);
