@@ -110,7 +110,14 @@ export async function runTrivia({ track = () => {} } = {}) {
     }
     const r = Math.min(rounds - 1, Math.floor(i / PER));
     const meta = h("div", "trivia__meta");
-    meta.append(h("span", null, `Ronda ${r + 1} · ${ROUNDS[r]?.name ?? ""}`), h("span", "trivia__num", `${pad(Math.min(i + 1, TOTAL))}/${TOTAL}`));
+    const quit = h("button", "trivia__quit", "Abandonar");
+    quit.type = "button";
+    quit.addEventListener("click", confirmQuit);
+    meta.append(
+      h("span", "trivia__round", `Ronda ${r + 1} · ${ROUNDS[r]?.name ?? ""}`),
+      h("span", "trivia__num", `${pad(Math.min(i + 1, TOTAL))}/${TOTAL}`),
+      quit
+    );
     top.replaceChildren(segs, meta);
   }
 
@@ -151,6 +158,41 @@ export async function runTrivia({ track = () => {} } = {}) {
       btn.focus();
     });
 
+  // Abandonar cuenta como intento: corre las 24 h igual que si hubiera fallado.
+  let over = false;
+
+  async function quit() {
+    if (over) return;
+    over = true;
+    onKey = null;
+    root.querySelector(".trivia__modal")?.remove();
+    state = { status: "failed", until: Date.now() + SETTINGS.cooldownHours * HOUR, score: 0, quit: true };
+    write(state);
+    track("trivia_abandoned");
+    await swap();
+    showFailed();
+  }
+
+  function confirmQuit() {
+    if (over || root.querySelector(".trivia__modal")) return;
+    const modal = h("div", "trivia__modal");
+    const box = h("div", "trivia__modal-box");
+    const cancel = h("button", "trivia__btn trivia__btn--ghost", "Seguir jugando");
+    const ok = h("button", "trivia__btn", "Abandonar");
+    cancel.type = ok.type = "button";
+    cancel.addEventListener("click", () => modal.remove());
+    ok.addEventListener("click", quit);
+    box.append(
+      h("h3", "trivia__modal-title", "¿Seguro que abandonas?"),
+      h("p", "trivia__text", `Cuenta como intento y no podrás volver a intentarlo en ${SETTINGS.cooldownHours} horas.`),
+      ok,
+      cancel
+    );
+    modal.append(box);
+    root.append(modal);
+    cancel.focus();
+  }
+
   // Ya falló y todavía no pasan las 24 h: se queda aquí.
   if (state?.status === "failed") {
     showFailed();
@@ -185,7 +227,7 @@ export async function runTrivia({ track = () => {} } = {}) {
       let answered = false;
       // Se guarda el avance antes de seguir: recargar no permite volver a contestar.
       const answer = (value, picked) => {
-        if (answered) return;
+        if (answered || over) return;
         answered = true;
         buzz();
         const next = score + (isRight(q, value) ? 1 : 0);
@@ -320,9 +362,12 @@ export async function runTrivia({ track = () => {} } = {}) {
 
   for (; i < TOTAL; i++) {
     if (i % PER === 0) await roundCard(i / PER);
+    if (over) return new Promise(() => {});
     await swap();
+    if (over) return new Promise(() => {});
     score = await ask(i, score);
     await wait(420);
+    if (over) return new Promise(() => {});
   }
   return conclude(score);
 }
