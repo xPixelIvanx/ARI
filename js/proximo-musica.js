@@ -30,15 +30,6 @@ export function createMusic(button) {
     button.setAttribute("aria-label", started && !muted ? "Pausar música" : "Reproducir música");
   };
 
-  async function fileExists() {
-    try {
-      const r = await fetch(FILE, { method: "HEAD" });
-      return r.ok && /audio|mpeg|octet-stream/i.test(r.headers.get("content-type") || "");
-    } catch {
-      return false;
-    }
-  }
-
   function startSynth() {
     if (!ctx) return;
     master = ctx.createGain();
@@ -86,29 +77,32 @@ export function createMusic(button) {
     timer = setInterval(schedule, 250);
   }
 
-  // Se llama desde un toque del usuario (los navegadores no dejan sonar antes).
-  async function start() {
-    if (started) return;
+  // Safari (iPhone) solo deja sonar durante el toque del usuario. Por eso NADA se espera
+  // (ni red ni promesas) antes de llamar a play() y resume(): todo ocurre en el mismo toque.
+  // Si el archivo no existe, play() falla y entonces arranca la melodía generada.
+  function resume() {
+    if (ctx && ctx.state !== "running") ctx.resume?.();
+  }
+
+  function start() {
+    if (started) return resume();
     started = true;
     button.hidden = false;
     const AC = window.AudioContext || window.webkitAudioContext;
-    if (AC) {
-      ctx = new AC();
-      ctx.resume?.();
-    }
-    if (await fileExists()) {
-      audio = new Audio(FILE);
-      audio.loop = true;
-      audio.volume = muted ? 0 : VOLUME;
-      try {
-        await audio.play();
-        paint();
-        return;
-      } catch {
+    ctx = AC ? new AC() : null;
+    resume();
+
+    audio = new Audio(FILE);
+    audio.loop = true;
+    audio.volume = muted ? 0 : VOLUME;
+    audio.play().then(
+      () => paint(),
+      () => {
         audio = null;
-      }
-    }
-    startSynth();
+        startSynth();
+        paint();
+      },
+    );
     paint();
   }
 
