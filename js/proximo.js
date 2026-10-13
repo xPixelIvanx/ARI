@@ -18,6 +18,19 @@ const DECAY_MS = 700; // qué tan rápido se encoge si sueltas antes
 const RING = 2 * Math.PI * 36; // circunferencia del anillo del botón
 const TOTAL = C.flores.length;
 
+// ---------- Vibración ----------
+// Solo funciona en celulares Android (Chrome/Firefox). iPhone/Safari no tiene esta función: ahí no pasa nada.
+const canBuzz = "vibrate" in navigator;
+const buzz = (pattern) => {
+  if (canBuzz) navigator.vibrate(pattern);
+};
+// Pulsos suaves y seguidos mientras mantienes presionado (el mismo tiempo que tarda en florecer).
+const growBuzz = () => {
+  const pattern = [];
+  for (let t = 0; t < HOLD_MS; t += 120) pattern.push(14, 106);
+  buzz(pattern);
+};
+
 // ---------- Contenido (todo viene de proximo-contenido.js) ----------
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -181,6 +194,7 @@ function startHold() {
   holding = true;
   music.start();
   music.growStart(HOLD_MS);
+  growBuzz();
   if (!started) {
     started = true;
     introLine.classList.remove("is-in");
@@ -194,6 +208,7 @@ function endHold() {
   if (!holding) return;
   holding = false;
   music.growStop();
+  buzz(0); // cancela los pulsos si se suelta antes de tiempo
   kick();
 }
 
@@ -202,6 +217,7 @@ function bloom() {
   holding = false;
   music.growStop();
   music.bloom();
+  buzz([40, 70, 40]);
   needRelease = true;
   raf = 0;
   p = 0;
@@ -239,6 +255,7 @@ function burst(f) {
 function finale() {
   finished = true;
   music.finale();
+  buzz([80, 120, 80, 120, 80, 120, 300]);
   garden.classList.add("is-complete");
   setTimeout(() => {
     reason.classList.remove("is-in");
