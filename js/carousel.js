@@ -1,5 +1,5 @@
-// Fecha de la propuesta. PLACEHOLDER: cámbiala por la fecha real.
-const PROPUESTA = new Date("2026-12-31T20:00:00");
+// Fecha de la propuesta: viernes 23 de octubre de 2026, 3:00 pm (hora local del dispositivo).
+const PROPUESTA = new Date("2026-10-23T15:00:00");
 
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
