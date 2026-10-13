@@ -123,17 +123,71 @@ export function createMusic(button) {
   // Una nota que sube mientras mantienes presionado: es el "crecimiento".
   let grow = null;
 
-  function pluck(freq, when, length, type, peak) {
-    const osc = ctx.createOscillator();
-    const env = ctx.createGain();
-    osc.type = type;
-    osc.frequency.value = freq;
-    env.gain.setValueAtTime(0.0001, when);
-    env.gain.exponentialRampToValueAtTime(peak, when + 0.02);
-    env.gain.exponentialRampToValueAtTime(0.0001, when + length);
-    osc.connect(env).connect(ctx.destination);
-    osc.start(when);
-    osc.stop(when + length + 0.05);
+  // Reverberación: una cola de ruido que se apaga. Da espacio y calidez, sin eco metálico.
+  let verb = null;
+  function room() {
+    if (!verb) {
+      const rate = ctx.sampleRate;
+      const len = rate * 3;
+      const buf = ctx.createBuffer(2, len, rate);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = buf.getChannelData(ch);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+      }
+      verb = ctx.createConvolver();
+      verb.buffer = buf;
+      const back = ctx.createGain();
+      back.gain.value = 0.5;
+      verb.connect(back).connect(ctx.destination);
+    }
+    const send = ctx.createGain();
+    send.gain.value = 0.6;
+    send.connect(verb);
+    return send;
+  }
+
+  // Campanita suave: seno puro con un armónico casi imperceptible, ataque lento y cola larga.
+  function bell(freq, when, length, peak) {
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 2600;
+    const send = room();
+    lp.connect(ctx.destination);
+    lp.connect(send);
+    for (const [ratio, level] of [[1, 1], [2, 0.15]]) {
+      const osc = ctx.createOscillator();
+      const env = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq * ratio;
+      env.gain.setValueAtTime(0.0001, when);
+      env.gain.exponentialRampToValueAtTime(peak * level, when + 0.12);
+      env.gain.exponentialRampToValueAtTime(0.0001, when + length);
+      osc.connect(env).connect(lp);
+      osc.start(when);
+      osc.stop(when + length + 0.1);
+    }
+  }
+
+  // Colchón de cuerdas: pares de senos apenas desafinados que se abren despacio.
+  function strings(freqs, when, length, peak) {
+    const send = room();
+    freqs.forEach((f) => {
+      for (const detune of [-5, 5]) {
+        const osc = ctx.createOscillator();
+        const env = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = f;
+        osc.detune.value = detune;
+        env.gain.setValueAtTime(0.0001, when);
+        env.gain.exponentialRampToValueAtTime(peak, when + 1.4);
+        env.gain.exponentialRampToValueAtTime(0.0001, when + length);
+        osc.connect(env);
+        env.connect(ctx.destination);
+        env.connect(send);
+        osc.start(when);
+        osc.stop(when + length + 0.1);
+      }
+    });
   }
 
   function growStart(durationMs) {
@@ -164,22 +218,21 @@ export function createMusic(button) {
     osc.stop(t + 0.15);
   }
 
-  // Al florecer: tres notas en arpegio y un brillo agudo.
+  // Al florecer: tres campanitas que se abren hacia arriba, como pétalos.
   function bloom() {
     if (!ctx || muted) return;
     resume();
-    const t = ctx.currentTime + 0.02;
-    [76, 83, 88].forEach((midi, i) => pluck(hz(midi), t + i * 0.09, 1.6, "triangle", 0.22));
-    pluck(hz(95), t + 0.27, 1.8, "sine", 0.1);
+    const t = ctx.currentTime + 0.05;
+    [[72, 0], [79, 0.22], [84, 0.44]].forEach(([midi, d]) => bell(hz(midi), t + d, 3.2, 0.2));
   }
 
-  // Al completar el ramo: el acorde de Do mayor, más largo.
+  // Al completar el ramo: un acorde de Do mayor que se abre despacio, con campanitas encima.
   function finale() {
     if (!ctx || muted) return;
     resume();
-    const t = ctx.currentTime + 0.05;
-    CHORDS[2].forEach((midi, i) => pluck(hz(midi + 12), t + i * 0.12, 4, "triangle", 0.2));
-    pluck(hz(60 + 24), t + 0.5, 4, "sine", 0.08);
+    const t = ctx.currentTime + 0.1;
+    strings([130.81, 164.81, 196.0, 261.63], t, 7, 0.05);
+    [72, 76, 79, 84].forEach((midi, i) => bell(hz(midi), t + 0.3 + i * 0.35, 4.5, 0.14));
   }
 
   button.addEventListener("click", toggle);
