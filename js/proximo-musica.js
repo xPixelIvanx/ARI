@@ -117,6 +117,71 @@ export function createMusic(button) {
     paint();
   }
 
+  // ---------- Efectos de las flores ----------
+  // Se disparan desde el mismo toque que los inicia, así que Safari también los deja sonar.
+
+  // Una nota que sube mientras mantienes presionado: es el "crecimiento".
+  let grow = null;
+
+  function pluck(freq, when, length, type, peak) {
+    const osc = ctx.createOscillator();
+    const env = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    env.gain.setValueAtTime(0.0001, when);
+    env.gain.exponentialRampToValueAtTime(peak, when + 0.02);
+    env.gain.exponentialRampToValueAtTime(0.0001, when + length);
+    osc.connect(env).connect(ctx.destination);
+    osc.start(when);
+    osc.stop(when + length + 0.05);
+  }
+
+  function growStart(durationMs) {
+    if (!ctx || muted) return;
+    resume();
+    growStop();
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(330, t);
+    osc.frequency.exponentialRampToValueAtTime(880, t + durationMs / 1000);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.14, t + 0.08);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t);
+    grow = { osc, gain };
+  }
+
+  function growStop() {
+    if (!grow || !ctx) return;
+    const { osc, gain } = grow;
+    grow = null;
+    const t = ctx.currentTime;
+    gain.gain.cancelScheduledValues(t);
+    gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    osc.stop(t + 0.15);
+  }
+
+  // Al florecer: tres notas en arpegio y un brillo agudo.
+  function bloom() {
+    if (!ctx || muted) return;
+    resume();
+    const t = ctx.currentTime + 0.02;
+    [76, 83, 88].forEach((midi, i) => pluck(hz(midi), t + i * 0.09, 1.6, "triangle", 0.22));
+    pluck(hz(95), t + 0.27, 1.8, "sine", 0.1);
+  }
+
+  // Al completar el ramo: el acorde de Do mayor, más largo.
+  function finale() {
+    if (!ctx || muted) return;
+    resume();
+    const t = ctx.currentTime + 0.05;
+    CHORDS[2].forEach((midi, i) => pluck(hz(midi + 12), t + i * 0.12, 4, "triangle", 0.2));
+    pluck(hz(60 + 24), t + 0.5, 4, "sine", 0.08);
+  }
+
   button.addEventListener("click", toggle);
   document.addEventListener("visibilitychange", () => {
     if (!ctx) return;
@@ -125,5 +190,5 @@ export function createMusic(button) {
     if (audio) document.hidden ? audio.pause() : !muted && audio.play().catch(() => {});
   });
 
-  return { start };
+  return { start, growStart, growStop, bloom, finale };
 }

@@ -180,6 +180,7 @@ function startHold() {
   if (finished || needRelease || holding) return;
   holding = true;
   music.start();
+  music.growStart(HOLD_MS);
   if (!started) {
     started = true;
     introLine.classList.remove("is-in");
@@ -192,12 +193,15 @@ function endHold() {
   needRelease = false;
   if (!holding) return;
   holding = false;
+  music.growStop();
   kick();
 }
 
 function bloom() {
   const f = flowers[ORDER[current]];
   holding = false;
+  music.growStop();
+  music.bloom();
   needRelease = true;
   raf = 0;
   p = 0;
@@ -234,6 +238,7 @@ function burst(f) {
 
 function finale() {
   finished = true;
+  music.finale();
   garden.classList.add("is-complete");
   setTimeout(() => {
     reason.classList.remove("is-in");
