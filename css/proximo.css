@@ -1,0 +1,163 @@
+:root {
+  --night: #14101A;
+  --night-2: #201829;
+  --gold: #E9C46A;
+  --gold-soft: #F3DFA6;
+  --rose: #E38CA5;
+  --text: #F5EEF0;
+  --text-soft: rgba(245, 238, 240, 0.6);
+  --serif: "Cormorant Garamond", "Times New Roman", serif;
+  --sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background:
+    radial-gradient(70% 50% at 50% 0%, rgba(233, 196, 106, 0.12), transparent 70%),
+    radial-gradient(60% 50% at 50% 100%, rgba(227, 140, 165, 0.12), transparent 70%),
+    linear-gradient(180deg, var(--night), var(--night-2));
+  color: var(--text);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* Estrellas de fondo */
+.stars {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20% 30%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 70% 20%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 85% 65%, rgba(243, 223, 166, 0.8), transparent),
+    radial-gradient(1px 1px at 35% 80%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 12% 70%, rgba(243, 223, 166, 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 60% 45%, rgba(255, 255, 255, 0.6), transparent);
+  animation: twinkle 6s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
+}
+
+.night {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 32px 24px;
+  text-align: center;
+  animation: rise 1.4s var(--ease) both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+.night__kicker {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.night__question {
+  margin: 0;
+  max-width: 14ch;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(44px, 12vw, 72px);
+  line-height: 1.02;
+  font-style: italic;
+  text-shadow: 0 0 40px rgba(233, 196, 106, 0.25);
+}
+
+/* Botones */
+.night__choices {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.night__choices button {
+  min-width: 130px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: transform 0.3s var(--ease), background 0.3s, color 0.3s;
+}
+
+.yes {
+  border: 0;
+  background: linear-gradient(135deg, var(--gold), var(--rose));
+  color: var(--night);
+  font-weight: 600;
+  box-shadow: 0 12px 30px -10px rgba(233, 196, 106, 0.6);
+}
+
+.no {
+  border: 1px solid rgba(245, 238, 240, 0.25);
+  background: transparent;
+  color: var(--text-soft);
+}
+
+.night__choices button:hover { transform: translateY(-2px); }
+
+/* Respuesta */
+.night__answer {
+  animation: rise 1.2s var(--ease) both;
+}
+
+.night__answer[hidden] { display: none; }
+
+.night__answer-big {
+  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-size: clamp(48px, 13vw, 84px);
+  line-height: 1;
+  color: var(--gold-soft);
+}
+
+.night__answer-text {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 16px;
+}
+
+.heart {
+  position: fixed;
+  bottom: -40px;
+  font-size: 22px;
+  pointer-events: none;
+  animation: float 4s var(--ease) forwards;
+}
+
+@keyframes float {
+  to { transform: translateY(-110vh) rotate(25deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stars,
+  .night,
+  .night__answer,
+  .heart { animation: none; }
+}
