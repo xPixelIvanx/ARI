@@ -216,7 +216,7 @@ function bloom() {
   const f = flowers[ORDER[current]];
   holding = false;
   music.growStop();
-  music.bloom();
+  music.bloom(current);
   buzz([40, 70, 40]);
   needRelease = true;
   raf = 0;

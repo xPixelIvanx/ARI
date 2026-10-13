@@ -218,21 +218,23 @@ export function createMusic(button) {
     osc.stop(t + 0.15);
   }
 
-  // Al florecer: tres campanitas que se abren hacia arriba, como pétalos.
-  function bloom() {
+  // Cada flor toca una sola campanada, con su propia nota. Las notas son de una escala
+  // pentatónica (Do, Re, Mi, Sol, La), así que nunca chocan entre sí.
+  const SCALE = [72, 74, 76, 79, 81];
+  function bloom(index = 0) {
     if (!ctx || muted) return;
     resume();
-    const t = ctx.currentTime + 0.05;
-    [[72, 0], [79, 0.22], [84, 0.44]].forEach(([midi, d]) => bell(hz(midi), t + d, 3.2, 0.2));
+    bell(hz(SCALE[index % SCALE.length]), ctx.currentTime + 0.02, 4, 0.22);
   }
 
-  // Al completar el ramo: un acorde de Do mayor que se abre despacio, con campanitas encima.
+  // Al completar el ramo: las cinco campanas suenan juntas (acorde pentatónico) sobre
+  // un colchón grave de Do y Sol. Todo se abre despacio y se queda sonando.
   function finale() {
     if (!ctx || muted) return;
     resume();
-    const t = ctx.currentTime + 0.1;
-    strings([130.81, 164.81, 196.0, 261.63], t, 7, 0.05);
-    [72, 76, 79, 84].forEach((midi, i) => bell(hz(midi), t + 0.3 + i * 0.35, 4.5, 0.14));
+    const t = ctx.currentTime + 0.05;
+    strings([130.81, 196.0], t, 8, 0.04);
+    SCALE.forEach((midi, i) => bell(hz(midi), t + i * 0.05, 7, 0.15));
   }
 
   button.addEventListener("click", toggle);
