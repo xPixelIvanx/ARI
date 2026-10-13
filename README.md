@@ -56,3 +56,10 @@ npx serve .
 ```
 
 (Hace falta un servidor local porque los scripts son módulos ES; abrir el archivo con doble click no funciona.)
+
+## Carrusel y página de la propuesta
+
+- `index.html` es un carrusel 3D con 3 folletos: el regalo (`regalo.html`), una cuenta regresiva y "Próximamente". La fecha de la cuenta regresiva está en `js/carousel.js` (`PROPUESTA`).
+- `proximo.html` es la página de la propuesta: intro de 5 flores que crecen al mantener presionado, y después fotos, promesas y la pregunta.
+- **Todo el texto y las fotos de esa página** están en `js/proximo-contenido.js`. Si una foto queda vacía (`""`) se ve un recuadro de muestra; para usar una foto, súbela a `assets/fotos/` y pon la ruta.
+- **Música:** si subes `assets/proximo.mp3` se usa ese archivo; si no, suena una melodía suave generada por el navegador.

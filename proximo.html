@@ -14,24 +14,93 @@
   <link rel="stylesheet" href="css/proximo.css" />
   <script type="module" src="js/proximo.js"></script>
 </head>
-<body>
+<body class="is-locked">
   <a class="back" href="index.html" aria-label="Volver al carrusel"><span aria-hidden="true">←</span><span class="back__label">Volver</span></a>
   <div class="stars" aria-hidden="true"></div>
 
-  <main class="night">
-    <p class="night__kicker" id="kicker">Hay algo que quiero preguntarte</p>
+  <!-- Intro: el ramo de flores amarillas -->
+  <section class="intro" id="intro" aria-label="Introducción">
+    <div class="intro__top">
+      <p class="intro__line is-in" id="intro-line"></p>
 
-    <h1 class="night__question" id="question">¿Quieres ser mi novia?</h1>
+      <article class="reason" id="reason" aria-live="polite">
+        <div class="reason__photo" id="reason-photo"></div>
+        <p class="reason__num" id="reason-num"></p>
+        <h2 class="reason__title" id="reason-title"></h2>
+        <p class="reason__text" id="reason-text"></p>
+      </article>
 
-    <div class="night__choices" id="choices">
-      <button class="yes" id="yes" type="button">Sí</button>
-      <button class="no" id="no" type="button">No</button>
+      <div class="intro__end" id="intro-end">
+        <h2 class="intro__end-title" id="end-title"></h2>
+        <p class="intro__end-text" id="end-text"></p>
+      </div>
     </div>
 
-    <section class="night__answer" id="answer" hidden aria-live="polite">
-      <p class="night__answer-big">¡Sí! ❤️</p>
-      <p class="night__answer-text">Ahora sí, es oficial.</p>
+    <div class="garden" id="garden" aria-hidden="true"></div>
+
+    <div class="intro__bottom">
+      <button class="hold" id="hold" type="button" aria-label="Mantén presionado para hacer crecer una flor">
+        <svg class="hold__ring" viewBox="0 0 80 80" aria-hidden="true">
+          <circle class="hold__track" cx="40" cy="40" r="36" />
+          <circle class="hold__progress" id="hold-progress" cx="40" cy="40" r="36" />
+        </svg>
+        <svg class="hold__bud" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 21v-9" />
+          <path d="M12 14c-3.5 0-5-2.2-5-5 3 0 5 1.8 5 5z" />
+          <path d="M12 12c0-3.4 1.6-5.4 5-6 .3 3.2-1.6 5.6-5 6z" />
+        </svg>
+      </button>
+      <p class="intro__hint" id="hint">Mantén presionado</p>
+      <button class="enter" id="enter" type="button" hidden>Entrar</button>
+    </div>
+  </section>
+
+  <!-- Contenido: se desbloquea al entrar -->
+  <main class="page" id="page" inert>
+    <header class="hero">
+      <p class="eyebrow reveal">Para</p>
+      <h1 class="hero__name reveal" id="hero-name"></h1>
+      <p class="hero__sub reveal" id="hero-sub"></p>
+      <a class="scroll-cue reveal" href="#nosotros">Sigue bajando</a>
+    </header>
+
+    <section class="section" id="nosotros">
+      <div class="section__head reveal">
+        <span class="section__num">01</span>
+        <h2 class="section__title" id="nos-title"></h2>
+        <p class="section__lead" id="nos-text"></p>
+      </div>
+      <div class="frames" id="frames"></div>
+    </section>
+
+    <section class="section" id="promesas">
+      <div class="section__head reveal">
+        <span class="section__num">02</span>
+        <h2 class="section__title" id="pro-title"></h2>
+        <p class="section__lead" id="pro-text"></p>
+      </div>
+      <ol class="promises" id="promises"></ol>
+    </section>
+
+    <section class="section ask" id="pregunta">
+      <p class="ask__kicker reveal" id="ask-kicker"></p>
+      <h2 class="ask__question reveal" id="ask-question"></h2>
+      <div class="ask__choices reveal" id="choices">
+        <button class="yes" id="yes" type="button">Sí</button>
+        <button class="no" id="no" type="button">No</button>
+      </div>
+
+      <div class="ask__answer" id="answer" hidden aria-live="polite">
+        <p class="ask__answer-big" id="answer-big"></p>
+        <p class="ask__answer-text" id="answer-text"></p>
+        <p class="ask__answer-extra" id="answer-extra"></p>
+        <p class="ask__sign" id="sign"></p>
+      </div>
     </section>
   </main>
+
+  <button class="music" id="music" type="button" aria-label="Reproducir música" aria-pressed="false" hidden>
+    <span class="music__bars" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+  </button>
 </body>
 </html>
