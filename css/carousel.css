@@ -1,17 +1,26 @@
 :root {
+  /* Carrusel: oscuro y misterioso */
+  --bg: #0B0A10;
+  --bg-2: #14101B;
+  --text: #F3ECF1;
+  --text-soft: rgba(243, 236, 241, 0.58);
+  --gold: #E9C46A;
+  --gold-soft: #F3DFA6;
+  --line: rgba(255, 255, 255, 0.12);
+
+  /* Folleto del regalo: rosa, igual que la página original */
   --paper: #FFFBFC;
   --blush-100: #FCE8EE;
   --pink-200: #F8D0DB;
-  --rose-400: #E38CA5;
   --rose-500: #CF6A8A;
   --rose-700: #9B4563;
   --ink: #2F2327;
   --ink-soft: #7A646B;
-  --shadow-lg: 0 2px 6px rgba(155, 69, 99, 0.06), 0 30px 60px -18px rgba(155, 69, 99, 0.28);
+
   --serif: "Cormorant Garamond", "Times New Roman", serif;
   --sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 *,
@@ -23,16 +32,50 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   background:
-    radial-gradient(60% 45% at 90% 0%, rgba(248, 208, 219, 0.55), transparent 70%),
-    radial-gradient(55% 40% at 0% 100%, rgba(252, 232, 238, 0.9), transparent 70%),
-    var(--paper);
-  color: var(--ink);
+    radial-gradient(65% 45% at 50% 0%, rgba(233, 196, 106, 0.09), transparent 70%),
+    radial-gradient(60% 45% at 50% 100%, rgba(207, 106, 138, 0.10), transparent 70%),
+    linear-gradient(180deg, var(--bg), var(--bg-2));
+  background-attachment: fixed;
+  color: var(--text);
   font-family: var(--sans);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
 
+/* Estrellas tenues */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 18% 22%, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(1px 1px at 72% 14%, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(1.5px 1.5px at 88% 58%, rgba(243, 223, 166, 0.7), transparent),
+    radial-gradient(1px 1px at 30% 84%, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(1px 1px at 8% 64%, rgba(243, 223, 166, 0.55), transparent),
+    radial-gradient(1.5px 1.5px at 56% 40%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 94% 90%, rgba(255, 255, 255, 0.4), transparent);
+  animation: twinkle 7s ease-in-out infinite alternate;
+}
+
+/* Viñeta para dar profundidad */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55));
+}
+
+@keyframes twinkle {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
+}
+
 .hub {
+  position: relative;
+  z-index: 1;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -44,10 +87,11 @@ body {
 
 .hub__kicker {
   margin: 0;
-  font-size: 12px;
-  letter-spacing: 0.22em;
+  font-size: 11px;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: var(--gold);
+  opacity: 0.85;
 }
 
 /* ---------- Carrusel ---------- */
@@ -82,10 +126,8 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  background: var(--paper);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid rgba(47, 35, 39, 0.08);
   overflow: hidden;
+  color: var(--ink);
 }
 
 .card::before {
@@ -97,21 +139,43 @@ body {
   pointer-events: none;
 }
 
+.card__kicker {
+  margin: 0 0 10px;
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.card__title {
+  margin: 0 0 14px;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(34px, 9vw, 44px);
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.card__text {
+  margin: 0 0 26px;
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 28ch;
+  text-wrap: balance;
+}
+
+/* 1) Regalo: rosa, como la página original, iluminado sobre el fondo oscuro */
 .card--gift {
   background:
     radial-gradient(70% 50% at 50% 0%, var(--pink-200), transparent 70%),
     var(--paper);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 0 0 1px rgba(248, 208, 219, 0.15),
+    0 24px 48px -24px rgba(207, 106, 138, 0.6),
+    0 0 52px -26px rgba(248, 208, 219, 0.5);
 }
 
-.card--timer {
-  background:
-    radial-gradient(80% 60% at 50% 100%, var(--blush-100), transparent 70%),
-    var(--paper);
-}
-
-.card--soon {
-  background: var(--blush-100);
-}
+.card--gift .card__text { color: var(--ink-soft); }
 
 .card__mono {
   display: grid;
@@ -127,31 +191,20 @@ body {
   margin-bottom: 22px;
 }
 
-.card__kicker {
-  margin: 0 0 10px;
-  font-size: 11px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--rose-700);
+/* 2) Cuenta regresiva: medianoche y dorado */
+.card--timer {
+  color: var(--text);
+  background:
+    radial-gradient(80% 55% at 50% 0%, rgba(233, 196, 106, 0.14), transparent 70%),
+    linear-gradient(165deg, #1D1530, #110D1B);
+  border: 1px solid rgba(233, 196, 106, 0.28);
+  box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.9), 0 0 52px -28px rgba(233, 196, 106, 0.45);
 }
 
-.card__title {
-  margin: 0 0 14px;
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: clamp(34px, 9vw, 44px);
-  line-height: 1.05;
-}
+.card--timer::before { border-color: rgba(233, 196, 106, 0.2); }
+.card--timer .card__kicker { color: var(--gold); }
+.card--timer .card__text { color: var(--text-soft); }
 
-.card__text {
-  margin: 0 0 26px;
-  color: var(--ink-soft);
-  font-size: 15px;
-  line-height: 1.6;
-  max-width: 28ch;
-}
-
-/* ---------- Cuenta regresiva ---------- */
 .timer {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -166,16 +219,17 @@ body {
   align-items: center;
   padding: 12px 0;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(47, 35, 39, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(233, 196, 106, 0.22);
 }
 
 .timer__unit span {
   font-family: var(--serif);
   font-size: 34px;
   line-height: 1;
-  color: var(--rose-700);
+  color: var(--gold-soft);
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 22px rgba(233, 196, 106, 0.35);
 }
 
 .timer__unit small {
@@ -183,10 +237,54 @@ body {
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: var(--text-soft);
 }
 
-/* ---------- Botón ---------- */
+/* 3) Próximamente: cristal ahumado con un "?" */
+.card--soon {
+  color: var(--text);
+  background:
+    radial-gradient(90% 60% at 50% 100%, rgba(255, 255, 255, 0.06), transparent 70%),
+    linear-gradient(180deg, #17181D, #0E0F13);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.95);
+}
+
+.card--soon::before { border-color: rgba(255, 255, 255, 0.12); }
+
+/* "?" de fondo, muy tenue */
+.card--soon::after {
+  content: "?";
+  position: absolute;
+  right: 22px;
+  bottom: -26px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 220px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+
+/* Destello que cruza la tarjeta */
+.card--soon .card__sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.07) 50%, transparent 62%);
+  transform: translateX(-100%);
+  animation: sheen 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes sheen {
+  0%, 55% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.card--soon .card__kicker { color: rgba(243, 236, 241, 0.7); }
+.card--soon .card__text { color: var(--text-soft); margin-bottom: 0; }
+
+/* ---------- Botones ---------- */
 .btn {
   display: inline-block;
   padding: 14px 30px;
@@ -198,6 +296,13 @@ body {
   letter-spacing: 0.08em;
   box-shadow: 0 10px 24px -10px rgba(155, 69, 99, 0.6);
   transition: transform 0.3s var(--ease);
+}
+
+.card--timer .btn {
+  background: linear-gradient(135deg, var(--gold), #E38CA5);
+  color: #14101B;
+  font-weight: 600;
+  box-shadow: 0 12px 30px -10px rgba(233, 196, 106, 0.6);
 }
 
 .btn:hover { transform: translateY(-2px); }
@@ -217,10 +322,16 @@ body {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(155, 69, 99, 0.25);
-  background: rgba(255, 255, 255, 0.8);
-  color: var(--rose-700);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--gold);
   cursor: pointer;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.controls__btn:hover {
+  background: rgba(233, 196, 106, 0.12);
+  border-color: rgba(233, 196, 106, 0.4);
 }
 
 .controls__btn svg {
@@ -244,17 +355,24 @@ body {
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--pink-200);
+  background: rgba(255, 255, 255, 0.22);
   cursor: pointer;
   transition: background 0.3s, transform 0.3s var(--ease);
 }
 
 .dots button[aria-current="true"] {
-  background: var(--rose-500);
+  background: var(--gold);
   transform: scale(1.35);
 }
 
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  body::before,
+  .card--soon .card__sheen { animation: none; }
   .slide,
   .btn,
   .dots button { transition: none; }
