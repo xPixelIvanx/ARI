@@ -8,7 +8,19 @@ const prevBtn = document.getElementById("prev");
 const nextBtn = document.getElementById("next");
 const carousel = document.getElementById("carousel");
 
+const n = slides.length;
+const mod = (i) => ((i % n) + n) % n;
+
+// Posición relativa de cada folleto respecto al activo: 0 = al centro,
+// 1 = a la derecha, -1 = a la izquierda (circular).
+const rel = (i, current) => {
+  let d = mod(i - current);
+  if (d > n / 2) d -= n;
+  return d;
+};
+
 let index = 0;
+let offsets = slides.map((_, i) => rel(i, 0));
 
 const dots = slides.map((_, i) => {
   const dot = document.createElement("button");
@@ -19,35 +31,76 @@ const dots = slides.map((_, i) => {
   return dot;
 });
 
-function go(i) {
-  // Da la vuelta: después del último vuelve al primero, y viceversa.
-  index = (i + slides.length) % slides.length;
-  track.style.transform = `translateX(${-index * 100}%)`;
-  dots.forEach((d, n) => d.setAttribute("aria-current", String(n === index)));
-  slides.forEach((s, n) => s.toggleAttribute("inert", n !== index));
+function place(slide, offset, dragPx = 0) {
+  slide.style.transform = `translateX(calc(${offset * 100}% + ${dragPx}px))`;
+}
+
+function go(target) {
+  index = mod(target);
+  slides.forEach((slide, k) => {
+    const to = rel(k, index);
+    // Un folleto que cruza de un lado al otro salta sin animar (ya está fuera de pantalla).
+    const jumps = Math.abs(to - offsets[k]) > 1;
+    if (jumps) slide.style.transition = "none";
+    offsets[k] = to;
+    place(slide, to);
+    if (jumps) {
+      slide.getBoundingClientRect();
+      slide.style.transition = "";
+    }
+    slide.toggleAttribute("inert", to !== 0);
+  });
+  dots.forEach((d, i) => d.setAttribute("aria-current", String(i === index)));
 }
 
 prevBtn.addEventListener("click", () => go(index - 1));
 nextBtn.addEventListener("click", () => go(index + 1));
 
-// Flechas del teclado
 addEventListener("keydown", (e) => {
   if (e.key === "ArrowLeft") go(index - 1);
   if (e.key === "ArrowRight") go(index + 1);
 });
 
-// Deslizar con el dedo o el mouse
+// Arrastrar con el dedo o el mouse: el folleto sigue al puntero.
+const DRAG_START = 6;
+const DRAG_COMMIT = 50;
 let startX = null;
+let dragging = false;
+let suppressClick = false;
+
 carousel.addEventListener("pointerdown", (e) => {
+  if (e.pointerType === "mouse" && e.button !== 0) return;
   startX = e.clientX;
+  dragging = false;
 });
-carousel.addEventListener("pointerup", (e) => {
+
+addEventListener("pointermove", (e) => {
   if (startX === null) return;
   const dx = e.clientX - startX;
-  startX = null;
-  if (Math.abs(dx) > 40) go(index + (dx < 0 ? 1 : -1));
+  if (!dragging && Math.abs(dx) > DRAG_START) {
+    dragging = true;
+    slides.forEach((s) => (s.style.transition = "none"));
+  }
+  if (dragging) slides.forEach((s, k) => place(s, offsets[k], dx));
 });
-carousel.addEventListener("pointercancel", () => { startX = null; });
+
+function endDrag(e) {
+  if (startX === null) return;
+  const dx = e.clientX - startX;
+  const wasDragging = dragging;
+  startX = null;
+  dragging = false;
+  slides.forEach((s) => (s.style.transition = ""));
+  if (!wasDragging) return;
+  suppressClick = true; // evita que soltar encima de un botón lo active
+  setTimeout(() => (suppressClick = false), 0);
+  go(Math.abs(dx) > DRAG_COMMIT ? index + (dx < 0 ? 1 : -1) : index);
+}
+addEventListener("pointerup", endDrag);
+addEventListener("pointercancel", endDrag);
+carousel.addEventListener("click", (e) => {
+  if (suppressClick) e.preventDefault();
+}, true);
 
 // Cuenta regresiva
 const els = {
@@ -57,7 +110,8 @@ const els = {
   secs: document.getElementById("t-secs"),
 };
 const link = document.getElementById("timer-link");
-const pad = (n) => String(n).padStart(2, "0");
+const pad = (v) => String(v).padStart(2, "0");
+let timerId = null;
 
 function tick() {
   const ms = PROPUESTA - Date.now();
@@ -75,5 +129,5 @@ function tick() {
 }
 
 tick();
-const timerId = setInterval(tick, 1000);
+timerId = setInterval(tick, 1000);
 go(0);
