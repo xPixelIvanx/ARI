@@ -312,8 +312,16 @@ body::after {
   100% { transform: translateX(100%); }
 }
 
-.card--soon .card__kicker { color: rgba(243, 236, 241, 0.7); }
-.card--soon .card__text { color: var(--text-soft); margin-bottom: 0; }
+.soon__word {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(15px, 5.2vw, 22px);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgba(243, 236, 241, 0.88);
+}
 
 /* ---------- Botones ---------- */
 .btn {
