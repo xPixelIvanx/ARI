@@ -227,14 +227,14 @@ export function createMusic(button) {
     bell(hz(SCALE[index % SCALE.length]), ctx.currentTime + 0.02, 4, 0.22);
   }
 
-  // Al completar el ramo: las cinco campanas suenan juntas (acorde pentatónico) sobre
-  // un colchón grave de Do y Sol. Todo se abre despacio y se queda sonando.
+  // Al completar el ramo: las cinco campanas se rasgan una tras otra, de grave a agudo,
+  // como un arpa, y se mezclan al final. Un solo Do grave de fondo, bajito.
   function finale() {
     if (!ctx || muted) return;
     resume();
     const t = ctx.currentTime + 0.05;
-    strings([130.81, 196.0], t, 8, 0.04);
-    SCALE.forEach((midi, i) => bell(hz(midi), t + i * 0.05, 7, 0.15));
+    strings([130.81], t, 9, 0.03);
+    SCALE.forEach((midi, i) => bell(hz(midi), t + i * 0.22, 6, 0.1));
   }
 
   button.addEventListener("click", toggle);
