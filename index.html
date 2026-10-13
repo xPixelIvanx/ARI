@@ -18,8 +18,9 @@
   <main class="hub">
     <p class="hub__kicker">Desliza para ver más</p>
 
-    <div class="carousel" id="carousel" aria-roledescription="carrusel" aria-label="Folletos">
-      <div class="carousel__track" id="track">
+    <!-- Carrusel 3D: los folletos forman un anillo. El JS agrega copias (clones) para llenarlo. -->
+    <div class="scene" id="scene" aria-roledescription="carrusel" aria-label="Folletos">
+      <div class="ring" id="ring">
 
         <!-- 1. El regalo actual -->
         <section class="slide" aria-roledescription="diapositiva" aria-label="1 de 3">
@@ -36,13 +37,13 @@
           <div class="card card--timer">
             <p class="card__kicker">Falta</p>
             <div class="timer" id="timer">
-              <div class="timer__unit"><span id="t-days">--</span><small>días</small></div>
-              <div class="timer__unit"><span id="t-hours">--</span><small>horas</small></div>
-              <div class="timer__unit"><span id="t-mins">--</span><small>min</small></div>
-              <div class="timer__unit"><span id="t-secs">--</span><small>seg</small></div>
+              <div class="timer__unit"><span id="t-days" data-t="days">--</span><small>días</small></div>
+              <div class="timer__unit"><span id="t-hours" data-t="hours">--</span><small>horas</small></div>
+              <div class="timer__unit"><span id="t-mins" data-t="mins">--</span><small>min</small></div>
+              <div class="timer__unit"><span id="t-secs" data-t="secs">--</span><small>seg</small></div>
             </div>
             <p class="card__text">para algo que quiero preguntarte.</p>
-            <a class="btn" id="timer-link" href="proximo.html" hidden>Ya es hora</a>
+            <a class="btn" id="timer-link" data-t="link" href="proximo.html" hidden>Ya es hora</a>
           </div>
         </section>
 

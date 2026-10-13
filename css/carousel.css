@@ -40,6 +40,7 @@ body {
   font-family: var(--sans);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  overflow-x: clip; /* las tarjetas laterales del anillo se salen de la pantalla: sin scroll lateral */
 }
 
 /* Estrellas tenues */
@@ -83,6 +84,7 @@ body::after {
   justify-content: center;
   gap: 22px;
   padding: 32px 16px;
+  overflow-x: clip;
 }
 
 .hub__kicker {
@@ -94,33 +96,61 @@ body::after {
   opacity: 0.85;
 }
 
-/* ---------- Carrusel ---------- */
-.carousel {
+/* ---------- Carrusel 3D ---------- */
+.scene {
+  --w: min(290px, 74vw);
+  --h: 470px;
+  position: relative;
   width: 100%;
-  max-width: 420px;
-  overflow: hidden;
+  height: calc(var(--h) + 24px);
+  perspective: 1500px;
+  perspective-origin: 50% 42%;
   touch-action: pan-y;
   user-select: none;
+  cursor: grab;
 }
 
-.carousel__track {
-  display: grid;
+.scene:active { cursor: grabbing; }
+
+/* "Piso" tenue bajo el anillo */
+.scene::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: min(360px, 80%);
+  height: 46px;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgba(233, 196, 106, 0.22), transparent);
+  filter: blur(8px);
+  z-index: -1;
+  pointer-events: none;
 }
 
-/* Todos los folletos ocupan la misma celda; el JS los coloca con translateX. */
-.slide {
-  grid-area: 1 / 1;
-  padding: 10px 26px 56px; /* espacio para que la sombra de la tarjeta no se recorte */
-  transition: transform 0.7s var(--ease);
+.ring {
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  margin: 12px auto 0;
+  transform-style: preserve-3d;
   will-change: transform;
+}
+
+/* Cada folleto se coloca en el círculo desde el JS (rotateY + translateZ). */
+.slide {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform, opacity, filter;
 }
 
 /* ---------- Tarjetas ---------- */
 .card {
   position: relative;
-  min-height: 460px;
+  height: 100%;
   border-radius: 28px;
-  padding: 44px 30px;
+  padding: 44px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -171,8 +201,8 @@ body::after {
   border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow:
     0 0 0 1px rgba(248, 208, 219, 0.15),
-    0 24px 48px -24px rgba(207, 106, 138, 0.6),
-    0 0 52px -26px rgba(248, 208, 219, 0.5);
+    0 30px 70px -22px rgba(207, 106, 138, 0.6),
+    0 0 80px -28px rgba(248, 208, 219, 0.5);
 }
 
 .card--gift .card__text { color: var(--ink-soft); }
@@ -198,9 +228,10 @@ body::after {
     radial-gradient(80% 55% at 50% 0%, rgba(233, 196, 106, 0.14), transparent 70%),
     linear-gradient(165deg, #1D1530, #110D1B);
   border: 1px solid rgba(233, 196, 106, 0.28);
-  box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.9), 0 0 52px -28px rgba(233, 196, 106, 0.45);
+  box-shadow: 0 30px 70px -25px rgba(0, 0, 0, 0.9), 0 0 80px -32px rgba(233, 196, 106, 0.45);
 }
 
+.card--timer { padding-inline: 18px; }
 .card--timer::before { border-color: rgba(233, 196, 106, 0.2); }
 .card--timer .card__kicker { color: var(--gold); }
 .card--timer .card__text { color: var(--text-soft); }
@@ -247,7 +278,7 @@ body::after {
     radial-gradient(90% 60% at 50% 100%, rgba(255, 255, 255, 0.06), transparent 70%),
     linear-gradient(180deg, #17181D, #0E0F13);
   border: 1px solid var(--line);
-  box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.95);
+  box-shadow: 0 30px 70px -25px rgba(0, 0, 0, 0.95);
 }
 
 .card--soon::before { border-color: rgba(255, 255, 255, 0.12); }
@@ -310,7 +341,6 @@ body::after {
 
 /* ---------- Controles ---------- */
 .controls {
-  margin-top: -34px;
   display: flex;
   align-items: center;
   gap: 18px;
@@ -373,7 +403,6 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   body::before,
   .card--soon .card__sheen { animation: none; }
-  .slide,
   .btn,
   .dots button { transition: none; }
 }

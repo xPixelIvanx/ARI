@@ -1,133 +1,202 @@
 // Fecha de la propuesta. PLACEHOLDER: cámbiala por la fecha real.
 const PROPUESTA = new Date("2026-12-31T20:00:00");
 
-const track = document.getElementById("track");
-const slides = [...track.children];
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const scene = document.getElementById("scene");
+const ring = document.getElementById("ring");
 const dotsWrap = document.getElementById("dots");
 const prevBtn = document.getElementById("prev");
 const nextBtn = document.getElementById("next");
-const carousel = document.getElementById("carousel");
 
-const n = slides.length;
-const mod = (i) => ((i % n) + n) % n;
+// ---------- Anillo: los folletos + sus clones ----------
+const originals = [...ring.children];
+const CARDS = originals.length; // folletos reales
+const COPIES = 2; // 3 reales + 3 clones = 6 posiciones en el círculo
 
-// Posición relativa de cada folleto respecto al activo: 0 = al centro,
-// 1 = a la derecha, -1 = a la izquierda (circular).
-const rel = (i, current) => {
-  let d = mod(i - current);
-  if (d > n / 2) d -= n;
-  return d;
-};
+for (let c = 1; c < COPIES; c++) {
+  originals.forEach((orig) => {
+    const clone = orig.cloneNode(true);
+    clone.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id")); // sin ids repetidos
+    ring.append(clone);
+  });
+}
 
-let index = 0;
-let offsets = slides.map((_, i) => rel(i, 0));
+const slots = [...ring.children];
+const N = slots.length;
+const STEP = 360 / N; // grados entre folletos
+const mod = (i, m = N) => ((i % m) + m) % m;
 
-const dots = slides.map((_, i) => {
+slots.forEach((slot, i) => slot.setAttribute("aria-label", `${(i % CARDS) + 1} de ${CARDS}`));
+
+const dots = originals.map((_, i) => {
   const dot = document.createElement("button");
   dot.type = "button";
   dot.setAttribute("aria-label", `Ir al folleto ${i + 1}`);
-  dot.addEventListener("click", () => go(i));
+  dot.addEventListener("click", () => goToCard(i));
   dotsWrap.append(dot);
   return dot;
 });
 
-function place(slide, offset, dragPx = 0) {
-  slide.style.transform = `translateX(calc(${offset * 100}% + ${dragPx}px))`;
-}
+// ---------- Geometría ----------
+let radius = 0;
 
-function go(target) {
-  index = mod(target);
-  slides.forEach((slide, k) => {
-    const to = rel(k, index);
-    // Un folleto que cruza de un lado al otro salta sin animar (ya está fuera de pantalla).
-    const jumps = Math.abs(to - offsets[k]) > 1;
-    if (jumps) slide.style.transition = "none";
-    offsets[k] = to;
-    place(slide, to);
-    if (jumps) {
-      slide.getBoundingClientRect();
-      slide.style.transition = "";
-    }
-    slide.toggleAttribute("inert", to !== 0);
+function measure() {
+  const w = ring.offsetWidth; // ancho de layout (no lo afecta la perspectiva)
+  // Radio para que N tarjetas de ancho w formen un polígono, con un pequeño espacio.
+  radius = (w / 2 / Math.tan(Math.PI / N)) * 1.12;
+  slots.forEach((slot, i) => {
+    slot.style.transform = `rotateY(${i * STEP}deg) translateZ(${radius}px)`;
   });
-  dots.forEach((d, i) => d.setAttribute("aria-current", String(i === index)));
+  render();
 }
 
-prevBtn.addEventListener("click", () => go(index - 1));
-nextBtn.addEventListener("click", () => go(index + 1));
+// ---------- Estado y animación ----------
+let pos = 0; // posición actual (en folletos, continua)
+let target = 0; // hacia dónde gira
+let active = -1;
+let raf = 0;
+let last = 0;
+
+function render() {
+  ring.style.transform = `translateZ(${-radius}px) rotateY(${-pos * STEP}deg)`;
+  slots.forEach((slot, i) => {
+    // Distancia (en folletos) al que está al frente: los de los lados se oscurecen.
+    const d = Math.abs(mod(i - pos + N / 2, N) - N / 2);
+    const k = Math.min(d, 1);
+    slot.style.opacity = String(1 - 0.2 * k);
+    slot.style.filter = k > 0.001 ? `brightness(${1 - 0.55 * k})` : "";
+  });
+}
+
+function updateActive() {
+  const front = mod(Math.round(target));
+  if (front === active) return;
+  active = front;
+  slots.forEach((slot, i) => slot.toggleAttribute("inert", i !== front));
+  dots.forEach((dot, i) => dot.setAttribute("aria-current", String(i === front % CARDS)));
+}
+
+function frame(now) {
+  const dt = Math.min(now - last, 50);
+  last = now;
+  const k = reduceMotion ? 1 : 1 - Math.exp(-dt / 95); // suavizado independiente de los fps
+  pos += (target - pos) * k;
+  if (Math.abs(target - pos) < 0.0005) {
+    pos = target;
+    raf = 0;
+    render();
+    return;
+  }
+  render();
+  raf = requestAnimationFrame(frame);
+}
+
+function kick() {
+  if (raf) return;
+  last = performance.now();
+  raf = requestAnimationFrame(frame);
+}
+
+function go(delta) {
+  target = Math.round(target) + delta;
+  updateActive();
+  kick();
+}
+
+function goToCard(card) {
+  const base = Math.round(target);
+  let delta = mod(card - mod(base, CARDS), CARDS);
+  if (delta > CARDS / 2) delta -= CARDS; // por el camino más corto
+  target = base + delta;
+  updateActive();
+  kick();
+}
+
+prevBtn.addEventListener("click", () => go(-1));
+nextBtn.addEventListener("click", () => go(1));
 
 addEventListener("keydown", (e) => {
-  if (e.key === "ArrowLeft") go(index - 1);
-  if (e.key === "ArrowRight") go(index + 1);
+  if (e.key === "ArrowLeft") go(-1);
+  if (e.key === "ArrowRight") go(1);
 });
 
-// Arrastrar con el dedo o el mouse: el folleto sigue al puntero.
+// ---------- Girar arrastrando (con inercia) ----------
 const DRAG_START = 6;
-const DRAG_COMMIT = 50;
-let startX = null;
-let dragging = false;
+const RAD = 180 / Math.PI;
+let drag = null;
 let suppressClick = false;
 
-carousel.addEventListener("pointerdown", (e) => {
+scene.addEventListener("pointerdown", (e) => {
   if (e.pointerType === "mouse" && e.button !== 0) return;
-  startX = e.clientX;
-  dragging = false;
+  drag = { x: e.clientX, startPos: pos, moved: false, samples: [{ t: performance.now(), x: e.clientX }] };
 });
 
 addEventListener("pointermove", (e) => {
-  if (startX === null) return;
-  const dx = e.clientX - startX;
-  if (!dragging && Math.abs(dx) > DRAG_START) {
-    dragging = true;
-    slides.forEach((s) => (s.style.transition = "none"));
-  }
-  if (dragging) slides.forEach((s, k) => place(s, offsets[k], dx));
+  if (!drag) return;
+  const dx = e.clientX - drag.x;
+  if (!drag.moved && Math.abs(dx) > DRAG_START) drag.moved = true;
+  if (!drag.moved) return;
+
+  // En un cilindro, un desplazamiento dx equivale a dx / radio radianes.
+  pos = target = drag.startPos - (dx / radius) * RAD / STEP;
+  const now = performance.now();
+  drag.samples.push({ t: now, x: e.clientX });
+  while (drag.samples.length > 2 && now - drag.samples[0].t > 100) drag.samples.shift();
+  render();
+  updateActive();
 });
 
-function endDrag(e) {
-  if (startX === null) return;
-  const dx = e.clientX - startX;
-  const wasDragging = dragging;
-  startX = null;
-  dragging = false;
-  slides.forEach((s) => (s.style.transition = ""));
-  if (!wasDragging) return;
+function endDrag() {
+  if (!drag) return;
+  const { moved, samples } = drag;
+  drag = null;
+  if (!moved) return;
+
   suppressClick = true; // evita que soltar encima de un botón lo active
   setTimeout(() => (suppressClick = false), 0);
-  go(Math.abs(dx) > DRAG_COMMIT ? index + (dx < 0 ? 1 : -1) : index);
+
+  // Inercia: se proyecta la velocidad del dedo y se acomoda al folleto más cercano.
+  const a = samples[0];
+  const b = samples[samples.length - 1];
+  const stopped = performance.now() - b.t > 80; // si el dedo se detuvo antes de soltar, no hay empuje
+  const v = !stopped && b.t > a.t ? (b.x - a.x) / (b.t - a.t) : 0; // px/ms
+  const throwSlots = Math.max(-1.2, Math.min(1.2, -((v * 180) / radius) * RAD / STEP));
+  target = Math.round(pos + throwSlots);
+  updateActive();
+  kick();
 }
 addEventListener("pointerup", endDrag);
 addEventListener("pointercancel", endDrag);
-carousel.addEventListener("click", (e) => {
+scene.addEventListener("click", (e) => {
   if (suppressClick) e.preventDefault();
 }, true);
 
-// Cuenta regresiva
-const els = {
-  days: document.getElementById("t-days"),
-  hours: document.getElementById("t-hours"),
-  mins: document.getElementById("t-mins"),
-  secs: document.getElementById("t-secs"),
-};
-const link = document.getElementById("timer-link");
+// ---------- Cuenta regresiva (en todas las copias) ----------
 const pad = (v) => String(v).padStart(2, "0");
+const setAll = (key, text) =>
+  document.querySelectorAll(`[data-t="${key}"]`).forEach((el) => (el.textContent = text));
 let timerId = null;
 
 function tick() {
   const ms = PROPUESTA - Date.now();
   if (ms <= 0) {
-    els.days.textContent = els.hours.textContent = els.mins.textContent = els.secs.textContent = "00";
-    link.hidden = false;
+    ["days", "hours", "mins", "secs"].forEach((k) => setAll(k, "00"));
+    document.querySelectorAll('[data-t="link"]').forEach((el) => (el.hidden = false));
     clearInterval(timerId);
     return;
   }
   const total = Math.floor(ms / 1000);
-  els.days.textContent = Math.floor(total / 86400);
-  els.hours.textContent = pad(Math.floor((total % 86400) / 3600));
-  els.mins.textContent = pad(Math.floor((total % 3600) / 60));
-  els.secs.textContent = pad(total % 60);
+  setAll("days", Math.floor(total / 86400));
+  setAll("hours", pad(Math.floor((total % 86400) / 3600)));
+  setAll("mins", pad(Math.floor((total % 3600) / 60)));
+  setAll("secs", pad(total % 60));
 }
 
 tick();
 timerId = setInterval(tick, 1000);
-go(0);
+
+addEventListener("resize", measure);
+document.fonts?.ready.then(measure);
+measure();
+updateActive();
