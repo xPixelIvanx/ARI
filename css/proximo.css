@@ -72,8 +72,8 @@ body.is-locked { overflow: hidden; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  min-height: 40px;
+  width: 44px;
+  min-height: 44px;
   padding: 0;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
@@ -109,7 +109,10 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 64px 20px max(22px, env(safe-area-inset-bottom));
+  padding: max(64px, calc(env(safe-area-inset-top) + 52px)) max(20px, env(safe-area-inset-right)) max(22px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  overflow-x: hidden;
+  overflow-y: auto; /* si la pantalla es muy baja (celular acostado, zoom), se puede bajar */
+  overscroll-behavior: contain;
   background:
     radial-gradient(70% 45% at 50% 0%, rgba(233, 196, 106, 0.12), transparent 70%),
     linear-gradient(180deg, var(--night), var(--night-2));
@@ -232,9 +235,9 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 /* El ramo (SVG) */
 .garden {
   position: relative;
-  width: min(340px, 92vw);
+  width: min(340px, 100%); /* nunca más ancho que la pantalla */
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 170px; /* nunca se aplasta: si falta espacio, la intro hace scroll */
   max-height: 300px;
   display: flex;
   align-items: flex-end;
@@ -328,7 +331,7 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   background: rgba(233, 196, 106, 0.08);
   color: var(--gold);
   cursor: pointer;
-  touch-action: none;
+  touch-action: pinch-zoom; /* mantener presionado sin impedir el zoom con dos dedos */
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -401,7 +404,7 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   align-items: center;
   justify-content: center;
   gap: 14px;
-  padding: 80px var(--gutter) 60px;
+  padding: 80px max(var(--gutter), env(safe-area-inset-right)) 60px max(var(--gutter), env(safe-area-inset-left));
   text-align: center;
 }
 
@@ -415,6 +418,8 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 
 .hero__name {
   margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   font-family: var(--serif);
   font-style: italic;
   font-weight: 400;
@@ -443,7 +448,7 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   background: linear-gradient(var(--gold), transparent);
 }
 
-.section { padding: clamp(70px, 14vw, 130px) var(--gutter); max-width: 980px; margin: 0 auto; }
+.section { padding: clamp(70px, 14vw, 130px) max(var(--gutter), env(safe-area-inset-right)) clamp(70px, 14vw, 130px) max(var(--gutter), env(safe-area-inset-left)); max-width: 980px; margin: 0 auto; }
 
 .section__head { margin-bottom: 40px; text-align: center; }
 
@@ -605,11 +610,11 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 /* Música */
 .music {
   position: fixed;
-  right: max(16px, env(safe-area-inset-right));
-  bottom: max(16px, env(safe-area-inset-bottom));
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
   z-index: 80;
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -647,4 +652,64 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   .intro__line,
   .reason,
   .intro__end { transition: opacity 0.3s; transform: none; }
+}
+
+/* Pantallas bajas y anchas (celular acostado): el ramo a la izquierda y el texto con el botón a la derecha */
+@media (orientation: landscape) and (max-height: 620px) and (min-width: 520px) {
+  .intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: clamp(8px, 3vw, 28px);
+    padding-top: max(14px, env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding-left: max(68px, env(safe-area-inset-left)); /* deja libre el botón de volver */
+  }
+
+  .garden {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: stretch;
+    width: 100%;
+    max-height: none;
+    min-height: 150px;
+  }
+
+  .intro__top {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: stretch;
+    width: 100%;
+    min-height: 150px;
+  }
+
+  .intro__bottom {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px 16px;
+  }
+
+  .hold { width: 64px; height: 64px; }
+  .hold__bud { width: 24px; height: 24px; }
+  .intro__hint { min-height: 0; }
+  .reason__photo { width: 44px; height: 44px; margin-bottom: 4px; }
+  .reason__title { font-size: clamp(22px, 4vw, 28px); margin-bottom: 2px; }
+  .reason__text { font-size: 13px; }
+  .intro__line { font-size: clamp(22px, 4vw, 32px); }
+  .intro__end-title { font-size: clamp(28px, 5vw, 40px); }
+  .hero { padding-top: 70px; padding-bottom: 40px; }
+}
+
+/* Pantallas muy angostas (zoom alto, plegables) */
+@media (max-width: 300px) {
+  .promise { padding-left: 62px; }
+  .promise__num { left: 16px; font-size: 28px; }
+  .ask__choices button { min-width: 0; flex: 1 1 100%; }
+  .section__title { overflow-wrap: anywhere; }
 }

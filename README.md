@@ -63,3 +63,12 @@ npx serve .
 - `proximo.html` es la página de la propuesta: intro de 5 flores que crecen al mantener presionado, y después fotos, promesas y la pregunta.
 - **Todo el texto y las fotos de esa página** están en `js/proximo-contenido.js`. Si una foto queda vacía (`""`) se ve un recuadro de muestra; para usar una foto, súbela a `assets/fotos/` y pon la ruta.
 - **Música:** si subes `assets/proximo.mp3` se usa ese archivo; si no, suena una melodía suave generada por el navegador.
+
+## Adaptación a cualquier pantalla
+
+Las tres páginas (`index.html`, `regalo.html`, `proximo.html`) se adaptan a celulares (vertical y horizontal), tablets y escritorio, y se pueden usar con zoom:
+
+- **Zoom permitido:** el `viewport` no bloquea el zoom y ningún elemento usa `touch-action: none` ni `pan-y` solos (el carrusel usa `pan-y pinch-zoom`; los botones de mantener presionado usan `pinch-zoom`).
+- **Nada se corta:** las intros hacen scroll si la pantalla es muy baja (celular acostado o con zoom), el visor de fotos tiene su propio scroll, y el carrusel agranda sus tarjetas si el contenido lo necesita.
+- **Áreas táctiles:** botones y enlaces miden al menos 44 px.
+- **Muescas y barras:** los márgenes respetan `env(safe-area-inset-*)`.

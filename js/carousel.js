@@ -29,7 +29,23 @@ slots.forEach((slot, i) => slot.setAttribute("aria-label", `${(i % CARDS) + 1} d
 // ---------- Geometría ----------
 let radius = 0;
 
+// Alto de las tarjetas: el del CSS, o más si el contenido de alguna lo necesita
+// (texto que se parte en más líneas por una pantalla angosta o por el zoom). Así nada se recorta.
+function fitHeight() {
+  scene.style.removeProperty("--h");
+  const base = ring.offsetHeight;
+  let need = 0;
+  slots.forEach((slot) => {
+    const card = slot.firstElementChild;
+    card.style.height = "auto"; // altura natural del contenido
+    need = Math.max(need, card.offsetHeight);
+    card.style.height = "";
+  });
+  if (need > base) scene.style.setProperty("--h", `${Math.ceil(need)}px`);
+}
+
 function measure() {
+  fitHeight();
   const w = ring.offsetWidth; // ancho de layout (no lo afecta la perspectiva)
   // Radio para que N tarjetas de ancho w formen un polígono, con un pequeño espacio.
   radius = (w / 2 / Math.tan(Math.PI / N)) * 1.12;
@@ -152,6 +168,7 @@ const pad = (v) => String(v).padStart(2, "0");
 const setAll = (key, text) =>
   document.querySelectorAll(`[data-t="${key}"]`).forEach((el) => (el.textContent = text));
 let timerId = null;
+let ready = false; // el carrusel ya se midió
 
 function tick() {
   const ms = PROPUESTA - Date.now();
@@ -159,6 +176,7 @@ function tick() {
     ["days", "hours", "mins", "secs"].forEach((k) => setAll(k, "00"));
     document.querySelectorAll('[data-t="link"]').forEach((el) => (el.hidden = false));
     clearInterval(timerId);
+    if (ready) measure(); // el botón nuevo cambia el alto de la tarjeta
     return;
   }
   const total = Math.floor(ms / 1000);
@@ -175,3 +193,4 @@ addEventListener("resize", measure);
 document.fonts?.ready.then(measure);
 measure();
 updateActive();
+ready = true;

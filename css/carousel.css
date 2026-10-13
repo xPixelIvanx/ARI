@@ -83,7 +83,7 @@ body::after {
   align-items: center;
   justify-content: center;
   gap: 22px;
-  padding: 32px 16px;
+  padding: max(32px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   overflow-x: clip;
 }
 
@@ -99,13 +99,14 @@ body::after {
 /* ---------- Carrusel 3D ---------- */
 .scene {
   --w: min(290px, 74vw);
-  --h: clamp(400px, calc(100dvh - 130px), 470px); /* se adapta a pantallas bajas */
+  /* Alto base; el JS lo agranda si el contenido de alguna tarjeta necesita más (zoom, pantallas angostas). */
+  --h: clamp(320px, calc(100dvh - 130px), 470px);
   position: relative;
   width: 100%;
   height: calc(var(--h) + 24px);
   perspective: 1500px;
   perspective-origin: 50% 42%;
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom; /* se puede bajar la página y hacer zoom con dos dedos */
   user-select: none;
   cursor: grab;
 }
@@ -180,9 +181,10 @@ body::after {
   margin: 0 0 14px;
   font-family: var(--serif);
   font-weight: 500;
-  font-size: clamp(34px, 9vw, 44px);
+  font-size: clamp(24px, 9vw, 44px);
   line-height: 1.05;
   text-wrap: balance;
+  overflow-wrap: anywhere;
 }
 
 .card__text {
@@ -191,6 +193,7 @@ body::after {
   line-height: 1.6;
   max-width: 28ch;
   text-wrap: balance;
+  overflow-wrap: anywhere;
 }
 
 /* 1) Regalo: rosa, como la página original, iluminado sobre el fondo oscuro */
@@ -238,7 +241,7 @@ body::after {
 
 .timer {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
   margin-bottom: 18px;
@@ -256,7 +259,7 @@ body::after {
 
 .timer__unit span {
   font-family: var(--serif);
-  font-size: 34px;
+  font-size: clamp(22px, 7.5vw, 34px);
   line-height: 1;
   color: var(--gold-soft);
   font-variant-numeric: tabular-nums;
@@ -288,11 +291,11 @@ body::after {
   content: "?";
   position: absolute;
   right: 22px;
-  bottom: -26px;
+  bottom: 14px;
   font-family: var(--serif);
   font-style: italic;
-  font-size: 220px;
-  line-height: 1;
+  font-size: 200px;
+  line-height: 0.7;
   color: rgba(255, 255, 255, 0.05);
   pointer-events: none;
 }
@@ -316,10 +319,10 @@ body::after {
   margin: 0;
   font-family: var(--serif);
   font-weight: 500;
-  font-size: clamp(15px, 5.2vw, 22px);
-  letter-spacing: 0.2em;
+  font-size: clamp(12px, 5.2vw, 22px);
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   color: rgba(243, 236, 241, 0.88);
 }
 
@@ -327,6 +330,8 @@ body::after {
 .btn {
   display: inline-block;
   padding: 14px 30px;
+  max-width: 100%;
+  text-align: center;
   border-radius: 999px;
   background: var(--rose-500);
   color: #fff;
@@ -350,6 +355,38 @@ body::after {
 :focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 3px;
+}
+
+/* Celular acostado y pantallas bajas: más compacto para que casi no haga falta bajar */
+@media (max-height: 520px) {
+  .hub { gap: 8px; padding-top: max(14px, env(safe-area-inset-top)); padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+  .hub__kicker { font-size: 10px; }
+  .scene { --w: min(340px, 62vw); --h: clamp(300px, calc(100dvh - 70px), 470px); height: calc(var(--h) + 8px); }
+  .ring { margin-top: 4px; }
+  .card { padding: 24px 20px; }
+  .card__mono { width: 48px; height: 48px; font-size: 24px; margin-bottom: 12px; }
+  .card__text { margin-bottom: 16px; }
+  .timer { margin-bottom: 10px; }
+}
+
+/* Escritorio y pantallas grandes: tarjetas más grandes */
+@media (min-width: 900px) and (min-height: 700px) {
+  .scene { --w: 340px; --h: clamp(480px, calc(100dvh - 190px), 560px); }
+  .card__title { font-size: 48px; }
+  .card__text { font-size: 16px; }
+  .soon__word { font-size: 24px; }
+}
+
+@media (min-width: 1500px) and (min-height: 900px) {
+  .scene { --w: 400px; --h: clamp(540px, calc(100dvh - 220px), 640px); perspective: 1800px; }
+  .card__title { font-size: 54px; }
+  .card__mono { width: 76px; height: 76px; font-size: 36px; }
+  .timer__unit span { font-size: 40px; }
+}
+
+/* Pantallas muy angostas: la cuenta regresiva baja a 2 x 2 */
+@media (max-width: 339px) {
+  .timer { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
