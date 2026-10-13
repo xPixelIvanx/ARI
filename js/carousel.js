@@ -5,9 +5,6 @@ const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const scene = document.getElementById("scene");
 const ring = document.getElementById("ring");
-const dotsWrap = document.getElementById("dots");
-const prevBtn = document.getElementById("prev");
-const nextBtn = document.getElementById("next");
 
 // ---------- Anillo: los folletos + sus clones ----------
 const originals = [...ring.children];
@@ -28,15 +25,6 @@ const STEP = 360 / N; // grados entre folletos
 const mod = (i, m = N) => ((i % m) + m) % m;
 
 slots.forEach((slot, i) => slot.setAttribute("aria-label", `${(i % CARDS) + 1} de ${CARDS}`));
-
-const dots = originals.map((_, i) => {
-  const dot = document.createElement("button");
-  dot.type = "button";
-  dot.setAttribute("aria-label", `Ir al folleto ${i + 1}`);
-  dot.addEventListener("click", () => goToCard(i));
-  dotsWrap.append(dot);
-  return dot;
-});
 
 // ---------- Geometría ----------
 let radius = 0;
@@ -74,7 +62,6 @@ function updateActive() {
   if (front === active) return;
   active = front;
   slots.forEach((slot, i) => slot.toggleAttribute("inert", i !== front));
-  dots.forEach((dot, i) => dot.setAttribute("aria-current", String(i === front % CARDS)));
 }
 
 function frame(now) {
@@ -103,18 +90,6 @@ function go(delta) {
   updateActive();
   kick();
 }
-
-function goToCard(card) {
-  const base = Math.round(target);
-  let delta = mod(card - mod(base, CARDS), CARDS);
-  if (delta > CARDS / 2) delta -= CARDS; // por el camino más corto
-  target = base + delta;
-  updateActive();
-  kick();
-}
-
-prevBtn.addEventListener("click", () => go(-1));
-nextBtn.addEventListener("click", () => go(1));
 
 addEventListener("keydown", (e) => {
   if (e.key === "ArrowLeft") go(-1);

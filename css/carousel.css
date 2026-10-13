@@ -99,7 +99,7 @@ body::after {
 /* ---------- Carrusel 3D ---------- */
 .scene {
   --w: min(290px, 74vw);
-  --h: 470px;
+  --h: clamp(400px, calc(100dvh - 130px), 470px); /* se adapta a pantallas bajas */
   position: relative;
   width: 100%;
   height: calc(var(--h) + 24px);
@@ -347,62 +347,6 @@ body::after {
 .btn:hover { transform: translateY(-2px); }
 .btn[hidden] { display: none; }
 
-/* ---------- Controles ---------- */
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.controls__btn {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--gold);
-  cursor: pointer;
-  transition: background 0.3s, border-color 0.3s;
-}
-
-.controls__btn:hover {
-  background: rgba(233, 196, 106, 0.12);
-  border-color: rgba(233, 196, 106, 0.4);
-}
-
-.controls__btn svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.dots {
-  display: flex;
-  gap: 10px;
-}
-
-.dots button {
-  width: 9px;
-  height: 9px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.22);
-  cursor: pointer;
-  transition: background 0.3s, transform 0.3s var(--ease);
-}
-
-.dots button[aria-current="true"] {
-  background: var(--gold);
-  transform: scale(1.35);
-}
-
 :focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 3px;
@@ -411,6 +355,5 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   body::before,
   .card--soon .card__sheen { animation: none; }
-  .btn,
-  .dots button { transition: none; }
+  .btn { transition: none; }
 }
