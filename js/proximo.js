@@ -1,5 +1,6 @@
 import DEFAULTS from "./proximo-contenido.js";
 import { applyStatic, editMode, loadContent, markRendered, resolveMedia } from "./content.js";
+import { buzz } from "./haptics.js";
 import { createMusic } from "./proximo-musica.js";
 
 const C = await loadContent(DEFAULTS, "proximo");
@@ -23,11 +24,7 @@ const RING = 2 * Math.PI * 36; // circunferencia del anillo del botón
 const TOTAL = C.flores.length;
 
 // ---------- Vibración ----------
-// Solo funciona en celulares Android (Chrome/Firefox). iPhone/Safari no tiene esta función: ahí no pasa nada.
-const canBuzz = "vibrate" in navigator;
-const buzz = (pattern) => {
-  if (canBuzz) navigator.vibrate(pattern);
-};
+// Android: navigator.vibrate. iPhone: tics del interruptor nativo (js/haptics.js).
 // Pulsos suaves y seguidos mientras mantienes presionado (el mismo tiempo que tarda en florecer).
 const growBuzz = () => {
   const pattern = [];
