@@ -326,6 +326,35 @@ body::after {
   color: rgba(243, 236, 241, 0.88);
 }
 
+/* 4) Wrapped: morado, rosa y dorado, como un cierre de año */
+.card--wrapped {
+  color: var(--text);
+  background:
+    radial-gradient(80% 55% at 20% 0%, rgba(207, 106, 138, 0.38), transparent 70%),
+    radial-gradient(70% 50% at 90% 100%, rgba(233, 196, 106, 0.22), transparent 70%),
+    linear-gradient(160deg, #2A1647, #140C26);
+  border: 1px solid rgba(207, 106, 138, 0.4);
+  box-shadow: 0 30px 70px -25px rgba(0, 0, 0, 0.9), 0 0 80px -30px rgba(207, 106, 138, 0.6);
+}
+.card--wrapped::before { border-color: rgba(233, 196, 106, 0.22); }
+.card--wrapped .card__kicker { color: var(--gold); }
+.card--wrapped .card__text { color: var(--text-soft); }
+.wrapped__word {
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(34px, 11vw, 52px);
+  line-height: 1;
+  background: linear-gradient(100deg, #F8D0DB, #E9C46A);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.wrapped__count { margin: 14px 0 0; font-size: 13px; color: var(--text-soft); }
+.wrapped__count b { color: var(--gold); font-variant-numeric: tabular-nums; }
+.wrapped__count[hidden] { display: none; }
+
 /* ---------- Botones ---------- */
 .btn {
   display: inline-block;

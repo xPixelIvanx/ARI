@@ -68,7 +68,7 @@ export async function start(opts) {
 
 // El admin puede entrar a las páginas antes de "la hora": se muestra el botón de la cuenta regresiva.
 function adminExtras() {
-  const links = $$('[data-t="link"]');
+  const links = $$('[data-t="link"],[data-t="wlink"]');
   if (!links.length) return;
   links.forEach((n) => (n.hidden = false));
   dispatchEvent(new Event("resize")); // el carrusel vuelve a medir sus tarjetas

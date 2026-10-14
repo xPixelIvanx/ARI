@@ -311,7 +311,10 @@ function enterPage({ playMusic = true } = {}) {
   setTimeout(() => (intro.hidden = true), reduceMotion ? 0 : 1300);
   observe();
 }
-enterBtn.addEventListener("click", () => enterPage());
+enterBtn.addEventListener("click", () => {
+  dispatchEvent(new CustomEvent("ari:action", { detail: { name: "proximo_entrar" } }));
+  enterPage();
+});
 
 // Aparecer al hacer scroll
 function observe() {
@@ -340,6 +343,7 @@ const noBtn = $("#no");
 let noClicks = 0;
 
 noBtn.addEventListener("click", () => {
+  dispatchEvent(new CustomEvent("ari:action", { detail: { name: "proximo_no" } }));
   const texts = C.pregunta.noTextos;
   noClicks = Math.min(noClicks + 1, texts.length - 1);
   noBtn.textContent = texts[noClicks];
@@ -347,6 +351,7 @@ noBtn.addEventListener("click", () => {
 });
 
 yesBtn.addEventListener("click", () => {
+  dispatchEvent(new CustomEvent("ari:action", { detail: { name: "proximo_si" } }));
   $("#ask-kicker").hidden = true;
   $("#ask-question").hidden = true;
   $("#choices").hidden = true;

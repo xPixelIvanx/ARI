@@ -96,20 +96,24 @@ Las tres páginas (`index.html`, `regalo.html`, `proximo.html`) se adaptan a cel
 - **Áreas táctiles:** botones y enlaces miden al menos 44 px.
 - **Muescas y barras:** los márgenes respetan `env(safe-area-inset-*)`.
 
-## Login con Google y estadísticas
+## Cuentas, perfil y estadísticas
 
-Las tres páginas piden iniciar sesión con Google (`js/session.js`, estilo en `css/auth.css`).
+Todas las páginas piden iniciar sesión con Google (`js/session.js`). La **primera vez** se pide un perfil: nombre y foto (la foto se recorta y se achica a 256 px y se guarda en el propio documento). Se puede editar después desde el chip de la cuenta, arriba a la derecha del carrusel (`js/account.js`), donde también está **Cerrar sesión**.
 
-Al crearse la cuenta se guarda `usuarios/{uid}` en Firestore, y después se va actualizando:
+Cada cuenta tiene `usuarios/{uid}` en Firestore:
 
-- `aperturas`: cuántas veces se abrió una página (total y por página en `paginas.<página>.aperturas`).
-- `segundos`: tiempo total con la pestaña visible (y por página en `paginas.<página>.segundos`).
-- `apartados.<página>_<apartado>`: segundos dentro de cada apartado (`regalo_carta`, `regalo_recuerdos`, `proximo_pregunta`, `intro`, etc.; en el carrusel, el folleto al frente).
+- `aperturas`, `sesiones` (una por pestaña), `segundos` (tiempo total con la pestaña visible), `ultimaVisita`.
+- `paginas.<página>.{aperturas,segundos}` y `apartados.<página>_<apartado>` (segundos por apartado: `regalo_carta`, `proximo_pregunta`, `index_wrapped`…).
+- `dias.<AAAA-MM-DD>` y `horas.<0-23>` (segundos), para saber cuándo viene.
+- `acciones.<nombre>`: cosas que hizo (`song_opened`, `open_when`, `final_surprise`, `secret_found`, `proximo_si`…). Cualquier página puede registrar una con `dispatchEvent(new CustomEvent("ari:action", { detail: { name } }))`.
 
-Para activarlo en Firebase:
+Para activarlo en Firebase: Authentication > Google, dominios autorizados y publicar `firestore.rules`.
 
-1. **Authentication > Sign-in method**: activar *Google*.
-2. **Authentication > Settings > Authorized domains**: agregar el dominio de Vercel.
-3. **Firestore > Rules**: pegar el contenido de `firestore.rules` y publicar (cada persona solo lee/escribe su propio documento).
+### Panel de estadísticas (admin)
 
-Las estadísticas se ven en la consola de Firebase > Firestore > `usuarios`.
+Con una cuenta admin, el chip del carrusel tiene **📊 Panel de estadísticas** (`admin.html`): resumen, lista de cuentas en vivo y, por cuenta, tiempo total, sesiones, días activos, hora favorita, tiempo por página y apartado, últimos 30 días, horas del día, acciones y sus premios. También permite cambiar el rango (viewer/admin) y abrir el Wrapped de esa cuenta.
+
+### Wrapped (`wrapped.html`)
+
+Historias a pantalla completa con su tiempo total, visitas, rincón favorito, hora favorita, lo que tocó y **premios de broma** (`awards()` en `js/stats-lib.js`). En el carrusel es la 4.ª tarjeta y se abre en año nuevo; la fecha y el mensaje final se cambian desde el modo edición (carrusel > Ajustes, y Wrapped > Ajustes). El admin puede verlo siempre y ver el de cualquier cuenta con `?uid=`.
+

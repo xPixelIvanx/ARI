@@ -1,7 +1,7 @@
 import { applyStatic, loadContent, markRendered } from "./content.js";
 
 // Textos y fecha editables por la cuenta admin (modo edición); si no hay nada publicado se usa lo escrito aquí.
-const CONTENT = await loadContent({ propuesta: "2026-10-23T15:00:00" }, "index");
+const CONTENT = await loadContent({ propuesta: "2026-10-23T15:00:00", wrapped: "2027-01-01T00:00:00" }, "index");
 applyStatic(CONTENT);
 
 // Fecha de la propuesta: viernes 23 de octubre de 2026, 3:00 pm (hora local del dispositivo).
@@ -195,6 +195,22 @@ function tick() {
 
 tick();
 timerId = setInterval(tick, 1000);
+
+// Wrapped: se abre en año nuevo (la fecha se cambia desde el modo edición > Ajustes).
+const WRAPPED = new Date(CONTENT.wrapped);
+function wrappedTick() {
+  const ms = WRAPPED - Date.now();
+  if (ms <= 0) {
+    document.querySelectorAll('[data-t="wlink"]').forEach((el) => (el.hidden = false));
+    document.querySelectorAll(".wrapped__count").forEach((el) => (el.hidden = true));
+    clearInterval(wrappedId);
+    if (ready) measure();
+    return;
+  }
+  setAll("wdays", Math.ceil(ms / 86400000));
+}
+const wrappedId = setInterval(wrappedTick, 60000);
+wrappedTick();
 
 addEventListener("resize", measure);
 document.fonts?.ready.then(measure);

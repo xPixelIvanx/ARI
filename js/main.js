@@ -15,8 +15,10 @@ lenis?.stop();
 
 // Firebase se carga en segundo plano para no retrasar la página.
 const firebase = import("./firebase.js").catch(() => null);
-const track = (name, params) =>
-  firebase.then((m) => m && m.track(name, params)).catch(() => {});
+const track = (name, params) => {
+  dispatchEvent(new CustomEvent("ari:action", { detail: { name } })); // lo cuenta js/session.js en las estadísticas
+  return firebase.then((m) => m && m.track(name, params)).catch(() => {});
+};
 
 function setSrc(media, src) {
   resolveMedia(src).then((url) => {

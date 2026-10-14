@@ -10,7 +10,7 @@ const SECTIONS = {
   regalo: [["inicio", "header.hero"], ["carta", "#carta"], ["recuerdos", "#recuerdos"], ["canciones", "#canciones"], ["abre_cuando", "#abre-cuando"], ["final", "#final"]],
   proximo: [["inicio", "header.hero"], ["nosotros", "#nosotros"], ["promesas", "#promesas"], ["pregunta", "#pregunta"]],
 };
-const CAROUSEL = ["regalo", "cuenta_regresiva", "proximamente"];
+const CAROUSEL = ["regalo", "cuenta_regresiva", "proximamente", "wrapped"];
 
 function currentSection() {
   if (PAGE === "index") return CAROUSEL[Number(document.getElementById("scene")?.dataset.front)] ?? null;
@@ -39,20 +39,62 @@ async function start() {
 
   fb.getRedirectResult(fb.auth).catch((e) => gate.fail(message(e)));
 
-  let tracking = false;
-  fb.onAuthStateChanged(fb.auth, (user) => {
+  let started = false;
+  fb.onAuthStateChanged(fb.auth, async (user) => {
     if (!user) return gate.ask(() => signIn(fb, gate));
+    if (started) return;
+    started = true;
+    // Cuenta nueva (o sin nombre/foto todavía): se crea su documento y se pide el perfil antes de dejarla pasar.
+    const data = await prepareUser(fb, user, gate).catch(() => ({}));
     gate.close();
-    if (!tracking) {
-      tracking = true;
-      track(fb, user).catch(() => {});
-      loadRole(fb, user).catch(() => {});
-    }
+    track(fb, user).catch(() => {});
+    loadRole(fb, user, data).catch(() => {});
   });
 }
 
+async function prepareUser(fb, user, gate) {
+  const { db, doc, getDoc, setDoc, serverTimestamp } = fb;
+  const ref = doc(db, "usuarios", user.uid);
+  const snap = await getDoc(ref);
+  let data = snap.exists() ? snap.data() : null;
+  if (!data) {
+    data = {
+      uid: user.uid,
+      nombre: user.displayName || "",
+      correo: user.email || "",
+      foto: user.photoURL || "",
+      creada: serverTimestamp(),
+      aperturas: 0,
+      segundos: 0,
+      sesiones: 0,
+      paginas: {},
+      apartados: {},
+    };
+    await setDoc(ref, data);
+  }
+  if (!data.perfil) {
+    const { profileForm, saveProfile } = await import("./profile.js");
+    data = await new Promise((resolve) =>
+      gate.show(
+        profileForm({
+          user,
+          data,
+          title: "¡Bienvenida!",
+          text: "Antes de entrar, dinos cómo te llamas y elige tu foto.",
+          button: "Entrar",
+          onSave: async (perfil) => {
+            await saveProfile(fb, user, perfil);
+            resolve({ ...data, ...perfil, perfil: true });
+          },
+        })
+      )
+    );
+  }
+  return data;
+}
+
 // Averigua el rango de la cuenta (y lo crea la primera vez). Solo "admin" carga el modo edición.
-async function loadRole(fb, user) {
+async function loadRole(fb, user, profile = {}) {
   const { db, doc, getDoc, setDoc, serverTimestamp } = fb;
   const ref = doc(db, "roles", user.uid);
   let rol = "viewer";
@@ -70,8 +112,10 @@ async function loadRole(fb, user) {
       }
     }
   } catch {}
-  window.ARI = { user, rol, page: PAGE };
+  window.ARI = { user, rol, page: PAGE, fb, profile };
   document.documentElement.dataset.rol = rol;
+  document.dispatchEvent(new CustomEvent("ari:role", { detail: window.ARI }));
+  if (PAGE === "index") import("./account.js").then((m) => m.mount(window.ARI)).catch(() => {});
   if (rol === "admin") {
     const edit = await import("./edit.js");
     edit.start({ page: PAGE, getToken: () => user.getIdToken() });
@@ -147,6 +191,11 @@ function buildGate() {
       box.append(mono, h("h1", "auth__title", "Antes de entrar"), h("p", "auth__text", "Inicia sesión con tu cuenta de Google para continuar."), btn, err);
       btn.focus({ preventScroll: true });
     },
+    // Reemplaza el contenido de la pantalla (por ejemplo, con el formulario de perfil).
+    show(node) {
+      box.replaceChildren(node);
+      node.querySelector("input[type=text]")?.focus({ preventScroll: true });
+    },
     fail(text) {
       if (api.btn) {
         api.btn.disabled = false;
@@ -166,53 +215,68 @@ function buildGate() {
 /* ---------- Estadísticas ---------- */
 
 async function track(fb, user) {
-  const { db, doc, getDoc, setDoc, increment, serverTimestamp } = fb;
+  const { db, doc, setDoc, increment, serverTimestamp } = fb;
   const ref = doc(db, "usuarios", user.uid);
 
-  // Cuenta nueva: se crea su documento de estadísticas en cero.
-  const snap = await getDoc(ref);
-  if (!snap.exists()) {
-    await setDoc(ref, {
-      uid: user.uid,
-      nombre: user.displayName || "",
-      correo: user.email || "",
-      foto: user.photoURL || "",
-      creada: serverTimestamp(),
-      aperturas: 0,
-      segundos: 0,
-      paginas: {},
-      apartados: {},
-    });
-  }
-
-  // Cada carga de página cuenta como una apertura.
+  // Cada carga de página cuenta como una apertura; la primera de cada pestaña, además, como una sesión.
+  let newSession = false;
+  try {
+    newSession = !sessionStorage.getItem("ari-sesion");
+    sessionStorage.setItem("ari-sesion", "1");
+  } catch {}
   await setDoc(
     ref,
-    { aperturas: increment(1), ultimaVisita: serverTimestamp(), paginas: { [PAGE]: { aperturas: increment(1) } } },
+    {
+      aperturas: increment(1),
+      ...(newSession ? { sesiones: increment(1) } : {}),
+      ultimaVisita: serverTimestamp(),
+      paginas: { [PAGE]: { aperturas: increment(1) } },
+    },
     { merge: true }
   );
 
+  // Acciones (abrió la carta, sacó un disco…): las páginas avisan con el evento "ari:action".
+  const actions = {};
+  addEventListener("ari:action", (e) => {
+    const name = String(e.detail?.name || "").replace(/[^a-z0-9_]/gi, "");
+    if (name) actions[name] = (actions[name] || 0) + 1;
+  });
+
   // Tiempo: un segundo por vez mientras la pestaña está visible; se guarda cada 15 s y al salir.
-  const pending = { total: 0, sections: {} };
+  const pending = { total: 0, sections: {}, days: {}, hours: {} };
+  const dayKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   setInterval(() => {
     if (document.visibilityState !== "visible") return;
+    const now = new Date();
     pending.total++;
+    const day = dayKey(now);
+    pending.days[day] = (pending.days[day] || 0) + 1;
+    const hour = String(now.getHours());
+    pending.hours[hour] = (pending.hours[hour] || 0) + 1;
     const s = currentSection();
     if (s) pending.sections[s] = (pending.sections[s] || 0) + 1;
   }, 1000);
 
+  const bump = (obj, prefix = "") => Object.fromEntries(Object.entries(obj).map(([k, n]) => [prefix + k, increment(n)]));
+
   const flush = () => {
-    if (!pending.total) return;
-    const { total, sections } = pending;
+    const names = Object.keys(actions);
+    if (!pending.total && !names.length) return;
+    const payload = { ultimaVisita: serverTimestamp() };
+    if (pending.total) {
+      payload.segundos = increment(pending.total);
+      payload.paginas = { [PAGE]: { segundos: increment(pending.total) } };
+      payload.apartados = bump(pending.sections, `${PAGE}_`);
+      payload.dias = bump(pending.days);
+      payload.horas = bump(pending.hours);
+    }
+    if (names.length) payload.acciones = bump(actions);
     pending.total = 0;
     pending.sections = {};
-    const apartados = {};
-    for (const [id, n] of Object.entries(sections)) apartados[`${PAGE}_${id}`] = increment(n);
-    setDoc(
-      ref,
-      { segundos: increment(total), paginas: { [PAGE]: { segundos: increment(total) } }, apartados, ultimaVisita: serverTimestamp() },
-      { merge: true }
-    ).catch(() => {});
+    pending.days = {};
+    pending.hours = {};
+    for (const k of names) delete actions[k];
+    setDoc(ref, payload, { merge: true }).catch(() => {});
   };
   setInterval(flush, 15000);
   document.addEventListener("visibilitychange", () => document.visibilityState === "hidden" && flush());

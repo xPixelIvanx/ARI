@@ -12,6 +12,8 @@ export const PAGES = [
   ["Inicio", "index.html"],
   ["Regalo", "regalo.html"],
   ["Próximo", "proximo.html"],
+  ["Wrapped", "wrapped.html"],
+  ["Panel", "admin.html"],
 ];
 
 export default {
@@ -136,8 +138,16 @@ export default {
     ],
   },
 
+  wrapped: {
+    lists: {},
+    settings: [{ title: "Mensaje final", fields: [{ path: "outro", label: "Mensaje", type: "textarea", rows: 4 }, { path: "firma", label: "Firma" }] }],
+  },
+
   index: {
     lists: {},
-    settings: [{ title: "Cuenta regresiva", fields: [{ path: "propuesta", label: "Fecha y hora de la propuesta", type: "datetime" }] }],
+    settings: [
+      { title: "Cuenta regresiva", fields: [{ path: "propuesta", label: "Fecha y hora de la propuesta", type: "datetime" }] },
+      { title: "Wrapped", fields: [{ path: "wrapped", label: "Cuándo se abre el Wrapped", type: "datetime" }] },
+    ],
   },
 };
