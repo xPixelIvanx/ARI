@@ -32,6 +32,7 @@ export const ACTION_NAMES = {
   final_surprise: "Presionó el botón prohibido",
   secret_found: "Encontró el secreto ✦",
   proximo_entrar: "Hizo crecer las 5 flores",
+  proximo_rascado: "Rascó la pregunta final",
   proximo_no: "Le dio a “No”",
   proximo_si: "Dijo que sí",
 };

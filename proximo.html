@@ -85,9 +85,14 @@
     </section>
 
     <section class="section ask" id="pregunta">
-      <p class="ask__kicker reveal" id="ask-kicker" data-ed="pregunta.kicker"></p>
-      <h2 class="ask__question reveal" id="ask-question" data-ed="pregunta.texto"></h2>
-      <div class="ask__choices reveal" id="choices">
+      <div class="scratch" id="scratch">
+        <p class="ask__kicker reveal" id="ask-kicker" data-ed="pregunta.kicker"></p>
+        <h2 class="ask__question reveal" id="ask-question" data-ed="pregunta.texto"></h2>
+        <canvas class="scratch__cover" id="scratch-cover" aria-hidden="true"></canvas>
+      </div>
+      <p class="scratch__hint" id="scratch-hint" aria-live="polite">Rasca aquí</p>
+      <button class="sr-only" id="scratch-skip" type="button">Descubrir la pregunta</button>
+      <div class="ask__choices reveal is-waiting" id="choices">
         <button class="yes" id="yes" type="button">Sí</button>
         <button class="no" id="no" type="button">No</button>
       </div>

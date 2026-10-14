@@ -1,4 +1,5 @@
 import DEFAULTS from "./proximo-contenido.js";
+import { setupScratch } from "./scratch.js";
 import { applyStatic, editMode, loadContent, markRendered, resolveMedia } from "./content.js";
 import { createMusic } from "./proximo-musica.js";
 
@@ -56,6 +57,16 @@ $("#pro-title").textContent = C.promesas.titulo;
 $("#pro-text").textContent = C.promesas.texto;
 $("#ask-kicker").textContent = C.pregunta.kicker;
 $("#ask-question").textContent = C.pregunta.texto;
+// La pregunta está tapada por una capa que hay que rascar; al descubrirla aparecen los botones (en modo edición se ve todo).
+setupScratch({
+  box: $("#scratch"),
+  canvas: $("#scratch-cover"),
+  hint: $("#scratch-hint"),
+  choices: $("#choices"),
+  skip: $("#scratch-skip"),
+  instant: EDITING,
+  onReveal: () => dispatchEvent(new CustomEvent("ari:action", { detail: { name: "proximo_rascado" } })),
+});
 $("#end-title").textContent = `${C.ramo.titulo}, ${C.nombre}`;
 $("#end-text").textContent = C.ramo.texto;
 
@@ -335,6 +346,8 @@ noBtn.addEventListener("click", () => {
 
 yesBtn.addEventListener("click", () => {
   dispatchEvent(new CustomEvent("ari:action", { detail: { name: "proximo_si" } }));
+  $("#scratch").hidden = true;
+  $("#scratch-hint").hidden = true;
   $("#ask-kicker").hidden = true;
   $("#ask-question").hidden = true;
   $("#choices").hidden = true;
