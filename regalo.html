@@ -58,12 +58,12 @@
     <!-- Hero -->
     <header class="hero">
       <div class="hero__inner" id="hero-inner">
-      <p class="eyebrow h-anim" style="--i:0">Un regalo para</p>
+      <p class="eyebrow h-anim" style="--i:0" data-ed="ui.eyebrow">Un regalo para</p>
       <h1 class="hero__title" id="hero-title" data-her-name></h1>
-      <p class="hero__subtitle h-anim" id="hero-subtitle" style="--i:2"></p>
+      <p class="hero__subtitle h-anim" id="hero-subtitle" style="--i:2" data-ed="heroSubtitle"></p>
 
       <div class="counter h-anim" style="--i:3">
-        <p class="counter__label">Juntos desde hace</p>
+        <p class="counter__label" data-ed="ui.counterLabel">Juntos desde hace</p>
         <div class="counter__grid">
           <div class="counter__unit"><span class="counter__num" id="c-days">0</span><span class="counter__txt">días</span></div>
           <div class="counter__unit"><span class="counter__num" id="c-hours">00</span><span class="counter__txt">horas</span></div>
@@ -80,7 +80,7 @@
     <section class="section" id="carta">
       <div class="section__head reveal">
         <span class="section__num">01</span>
-        <h2 class="section__title">Una carta</h2>
+        <h2 class="section__title" data-ed="ui.cartaTitulo">Una carta</h2>
       </div>
 
       <div class="envelope-wrap reveal" id="envelope-wrap">
@@ -95,10 +95,10 @@
       </div>
 
       <article class="letter" id="letter" hidden>
-        <p class="letter__date" id="letter-date"></p>
-        <p class="letter__greeting" id="letter-greeting"></p>
+        <p class="letter__date" id="letter-date" data-ed="letter.date"></p>
+        <p class="letter__greeting" id="letter-greeting" data-ed="letter.greeting"></p>
         <div class="letter__body" id="letter-body"></div>
-        <p class="letter__sign" id="letter-sign"></p>
+        <p class="letter__sign" id="letter-sign" data-ed="letter.signature"></p>
       </article>
     </section>
 
@@ -106,8 +106,8 @@
     <section class="section" id="recuerdos">
       <div class="section__head reveal">
         <span class="section__num">02</span>
-        <h2 class="section__title">Recuerdos</h2>
-        <p class="section__lead">Algunos de mis momentos favoritos. Toca cualquiera para verlo en grande.</p>
+        <h2 class="section__title" data-ed="ui.recuerdosTitulo">Recuerdos</h2>
+        <p class="section__lead" data-ed="ui.recuerdosTexto">Algunos de mis momentos favoritos. Toca cualquiera para verlo en grande.</p>
       </div>
       <div class="gallery" id="gallery"></div>
     </section>
@@ -116,8 +116,8 @@
     <section class="section" id="canciones">
       <div class="section__head reveal">
         <span class="section__num">03</span>
-        <h2 class="section__title">Nuestras canciones</h2>
-        <p class="section__lead">Canciones que me hacen pensar en ti. Toca un disco para sacarlo.</p>
+        <h2 class="section__title" data-ed="ui.cancionesTitulo">Nuestras canciones</h2>
+        <p class="section__lead" data-ed="ui.cancionesTexto">Canciones que me hacen pensar en ti. Toca un disco para sacarlo.</p>
       </div>
       <div class="songs" id="songs"></div>
     </section>
@@ -126,8 +126,8 @@
     <section class="section" id="abre-cuando">
       <div class="section__head reveal">
         <span class="section__num">04</span>
-        <h2 class="section__title">Abre cuando…</h2>
-        <p class="section__lead">Guárdalas para el momento indicado. O ábrelas todas ahora, no te juzgo.</p>
+        <h2 class="section__title" data-ed="ui.abreCuandoTitulo">Abre cuando…</h2>
+        <p class="section__lead" data-ed="ui.abreCuandoTexto">Guárdalas para el momento indicado. O ábrelas todas ahora, no te juzgo.</p>
       </div>
       <div class="cards" id="cards"></div>
     </section>
@@ -136,7 +136,7 @@
     <section class="section final" id="final">
       <div class="section__head reveal">
         <span class="section__num">05</span>
-        <h2 class="section__title" id="final-title"></h2>
+        <h2 class="section__title" id="final-title" data-ed="final.title"></h2>
       </div>
       <div class="final__stage reveal">
         <div class="final__ask">

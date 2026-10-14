@@ -1,16 +1,45 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Contenido que publica el editor (fotos, textos, música): se lee y escribe sin login, como antes.
+
+    // Dueño de la página: este correo (verificado por Google) siempre es admin.
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'exmeu23@gmail.com';
+    }
+
+    // Admin = el dueño, o una cuenta con rol "admin" en roles/{uid}.
+    function isAdmin() {
+      return isOwner()
+        || (request.auth != null
+            && exists(/databases/$(database)/documents/roles/$(request.auth.uid))
+            && get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.rol == 'admin');
+    }
+
+    // Contenido de la página y sus archivos (fotos, música): lo lee cualquiera, solo el admin lo cambia.
     match /edicion/{doc} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
     match /archivos/{doc} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
-    // Estadísticas: cada persona solo accede a su propio documento.
+
+    // Rangos. Cada cuenta se registra sola como "viewer" (solo ver); "admin" solo lo puede crear el dueño.
+    // Para dar permisos a otra cuenta, cambia su "rol" a "admin" desde la consola de Firebase (o desde una cuenta admin).
+    match /roles/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow create: if request.auth != null && request.auth.uid == uid
+        && (request.resource.data.rol == 'viewer' || (request.resource.data.rol == 'admin' && isOwner()));
+      allow update, delete: if isAdmin();
+    }
+
+    // Estadísticas: cada persona escribe solo en su documento; el admin puede leerlas todas.
     match /usuarios/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow write: if request.auth != null && request.auth.uid == uid;
     }
   }
 }

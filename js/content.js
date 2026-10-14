@@ -6,16 +6,18 @@ export const CONTENT_DOC = "edicion/contenido";
 
 export class NoDatabase extends Error {}
 
-export async function cloud(path, { method = "GET", body, timeout = 30000 } = {}) {
+export async function cloud(path, { method = "GET", body, timeout = 30000, token } = {}) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeout);
   let res;
   try {
+    const headers = body ? { "Content-Type": "application/json" } : {};
+    if (token) headers.Authorization = `Bearer ${token}`;
     res = await fetch(`${FIRESTORE}/${path}?key=${API_KEY}`, {
       method,
       cache: "no-store",
       signal: ctrl.signal,
-      headers: body ? { "Content-Type": "application/json" } : {},
+      headers,
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch {
@@ -27,25 +29,116 @@ export async function cloud(path, { method = "GET", body, timeout = 30000 } = {}
   const msg = (await res.json().catch(() => ({})))?.error?.message || "";
   if (res.status === 404 && /database .* does not exist/i.test(msg)) throw new NoDatabase();
   if (res.status === 404) return null;
-  if (res.status === 403)
-    throw new Error("Firebase no dejó publicar: revisa las reglas de Firestore (el modo de prueba dura 30 días).");
+  if (res.status === 403 || res.status === 401)
+    throw new Error("Firebase no te dejó guardar: solo la cuenta admin puede publicar (revisa las reglas de Firestore).");
   throw new Error(`Firebase respondió con un error (${res.status}). Intenta de nuevo.`);
 }
 
-export const putDoc = (path, fields) => cloud(path, { method: "PATCH", body: { fields } });
+export const putDoc = (path, fields, token) => cloud(path, { method: "PATCH", body: { fields }, token });
 
-export async function fetchPublished(timeout) {
-  const doc = await cloud(CONTENT_DOC, { timeout });
+/* ---------- Contenido por página ---------- */
+// Cada página (regalo, proximo, index, …) tiene su documento en Firestore: edicion/<página>.
+// "regalo" conserva el documento de siempre (edicion/contenido).
+
+export const docFor = (page) => (page === "regalo" ? CONTENT_DOC : `edicion/${page}`);
+
+export async function fetchPublished(timeout, page = "regalo") {
+  const doc = await cloud(docFor(page), { timeout });
   return doc ? JSON.parse(doc.fields.json.stringValue) : null;
 }
 
-// Si Firestore no responde a tiempo, la página usa config.js.
-export async function loadContent(base, timeout = 4000) {
-  try {
-    const data = await fetchPublished(timeout);
-    if (data) return { ...structuredClone(base), ...data };
-  } catch {}
-  return base;
+// Modo edición: solo lo activa la cuenta admin (js/edit.js). Guarda un borrador por página en este dispositivo.
+const ls = {
+  get(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  set(key, value) {
+    try {
+      value == null ? localStorage.removeItem(key) : localStorage.setItem(key, value);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+};
+export const editMode = () => ls.get("ari-edit-mode") === "1";
+export const setEditMode = (on) => ls.set("ari-edit-mode", on ? "1" : null);
+export const draftStore = {
+  load: (page) => {
+    try {
+      return JSON.parse(ls.get(`ari-draft-${page}`));
+    } catch {
+      return null;
+    }
+  },
+  save: (page, data, dirty) => ls.set(`ari-draft-${page}`, JSON.stringify(data)) && ls.set(`ari-dirty-${page}`, dirty ? "1" : null),
+  isDirty: (page) => ls.get(`ari-dirty-${page}`) === "1",
+  clear: (page) => (ls.set(`ari-draft-${page}`, null), ls.set(`ari-dirty-${page}`, null)),
+};
+
+const loaded = new Map();
+
+// Devuelve lo publicado (o el borrador sin publicar si estás editando); si Firestore no responde a tiempo, usa `base`.
+// El resultado se comparte con js/edit.js (misma promesa por página).
+export function loadContent(base, page = "regalo", timeout = 4000) {
+  if (!loaded.has(page)) {
+    loaded.set(
+      page,
+      (async () => {
+        const merge = (data) => ({ ...structuredClone(base), ...(data || {}) });
+        if (editMode() && draftStore.isDirty(page)) {
+          const local = draftStore.load(page);
+          if (local) return merge(local);
+        }
+        try {
+          const data = await fetchPublished(editMode() ? 8000 : timeout, page);
+          if (data) return merge(data);
+        } catch {}
+        return merge(editMode() ? draftStore.load(page) : null);
+      })()
+    );
+  }
+  return loaded.get(page);
+}
+
+export const getContent = (page) => loadContent({}, page);
+
+/* ---------- Rutas ("memories.0.caption") ---------- */
+
+export const getAt = (obj, path) => path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
+
+export function setAt(obj, path, value) {
+  const keys = path.split(".");
+  const last = keys.pop();
+  let o = obj;
+  keys.forEach((k, i) => {
+    if (o[k] == null || typeof o[k] !== "object") o[k] = /^\d+$/.test(keys[i + 1] ?? last) ? [] : {};
+    o = o[k];
+  });
+  o[last] = value;
+}
+
+// Textos/imágenes que están escritos a mano en el HTML: se reemplazan con lo publicado (data-ed / data-ed-img).
+export function applyStatic(content, root = document) {
+  root.querySelectorAll("[data-ed]").forEach((n) => {
+    if (n.dataset.edDef === undefined) n.dataset.edDef = n.textContent;
+    const v = getAt(content, n.dataset.ed);
+    if (typeof v === "string") n.textContent = v;
+  });
+  root.querySelectorAll("img[data-ed-img]").forEach((n) => {
+    const v = getAt(content, n.dataset.edImg);
+    if (typeof v === "string" && v) resolveMedia(v).then((url) => url && (n.src = url));
+  });
+}
+
+// Cada página avisa cuando ya pintó todo, para que el editor sepa que puede preparar los elementos.
+export function markRendered() {
+  window.__ariRendered = true;
+  document.dispatchEvent(new Event("ari:rendered"));
 }
 
 /* ---------- Archivos ---------- */

@@ -29,13 +29,26 @@ Todo el contenido está en **`js/config.js`**: nombres, fecha de inicio, frases 
 
 Sube un archivo `.mp3` como `assets/musica.mp3`. Si no existe, el botón de música simplemente no aparece.
 
-## Modo edición (temporal)
+## Modo edición en vivo (solo admin)
 
-Abre la página con `?editar` al final y toca **✎ Editar**. Al tocar **Publicar**, los cambios (textos, fotos, canciones, música) se suben a Firestore y la página normal los muestra en cuanto se recarga, sin esperar a Vercel. En *Canciones* basta pegar el link de Spotify para que se llenen el nombre y la portada.
+Si entras con la cuenta admin aparece el botón **✎ Editar** (abajo a la izquierda) en todas las páginas. Al tocarlo la página se salta las intros y se edita **directamente sobre ella**:
 
-La página normal lee lo publicado en Firestore (`edicion/contenido`); si Firestore no responde en 4 s, usa `js/config.js` como respaldo.
+- **Textos:** tócalos y escribe.
+- **Fotos y recuadros de foto:** tócalos y elige una imagen (se achica sola).
+- **Listas** (fotos, canciones, tarjetas, párrafos de la carta, promesas…): cada elemento tiene ✎ (todos sus campos), ↑ ↓ y ✕, y debajo hay un botón **+ Agregar**.
+- **Ajustes:** lo que no está a la vista (nombres, fecha del contador, frases de la intro, las 5 flores, música, secreto, fecha de la cuenta regresiva).
+- **Confirmar cambios** publica en Firestore; ella lo ve al abrir o recargar. Mientras no confirmes, los cambios son un borrador en tu dispositivo. **Descartar** vuelve a lo publicado y **Salir** te deja ver la página como la ve ella.
 
-Para quitar el editor al terminar: borrar `js/editor.js`, `css/editor.css` y las líneas marcadas `modo edición` en `js/main.js`.
+Para agregar una página nueva al sistema: ponle a sus textos `data-ed="ruta"` (y `data-ed-img`, `data-ed-list` / `data-ed-item` si aplica), incluye `session.js` con su `data-page`, y agrega su entrada en `js/edit-schemas.js`. Las páginas escritas a mano en HTML aplican lo publicado con `applyStatic()` (ver `js/carousel.js`).
+
+## Rangos
+
+Colección `roles/{uid}` en Firestore, con el campo `rol`:
+
+- `admin`: puede editar y publicar. El correo del dueño (`exmeu23@gmail.com`) es admin siempre (definido en `firestore.rules`).
+- `viewer`: solo ve la página. Es lo que recibe cualquier otra cuenta al iniciar sesión por primera vez.
+
+Para dar permiso de edición a otra cuenta: en la consola de Firebase > Firestore > `roles` > su documento, cambia `rol` a `admin`.
 
 ## Firebase
 
@@ -75,7 +88,7 @@ Las tres páginas (`index.html`, `regalo.html`, `proximo.html`) se adaptan a cel
 
 ## Login con Google y estadísticas
 
-Las tres páginas piden iniciar sesión con Google (`js/session.js`, estilo en `css/auth.css`). Con `?editar` no se pide login ni se registra nada.
+Las tres páginas piden iniciar sesión con Google (`js/session.js`, estilo en `css/auth.css`).
 
 Al crearse la cuenta se guarda `usuarios/{uid}` en Firestore, y después se va actualizando:
 

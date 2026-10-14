@@ -28,23 +28,23 @@
         <section class="slide" aria-roledescription="diapositiva" aria-label="1 de 3">
           <div class="card card--gift">
             <span class="card__mono">A</span>
-            <h1 class="card__title">Tengo algo para ti</h1>
-            <p class="card__text">Algo hecho a mano, programado con todo el corazón.</p>
-            <a class="btn" href="regalo.html">Abrir</a>
+            <h1 class="card__title" data-ed="gift.title">Tengo algo para ti</h1>
+            <p class="card__text" data-ed="gift.text">Algo hecho a mano, programado con todo el corazón.</p>
+            <a class="btn" href="regalo.html" data-ed="gift.btn">Abrir</a>
           </div>
         </section>
 
         <!-- 2. Cuenta regresiva a la propuesta -->
         <section class="slide" aria-roledescription="diapositiva" aria-label="2 de 3">
           <div class="card card--timer">
-            <p class="card__kicker">Falta</p>
+            <p class="card__kicker" data-ed="timer.kicker">Falta</p>
             <div class="timer" id="timer">
               <div class="timer__unit"><span id="t-days" data-t="days">--</span><small>días</small></div>
               <div class="timer__unit"><span id="t-hours" data-t="hours">--</span><small>horas</small></div>
               <div class="timer__unit"><span id="t-mins" data-t="mins">--</span><small>min</small></div>
               <div class="timer__unit"><span id="t-secs" data-t="secs">--</span><small>seg</small></div>
             </div>
-            <p class="card__text">para algo que quiero preguntarte.</p>
+            <p class="card__text" data-ed="timer.text">para algo que quiero preguntarte.</p>
             <a class="btn" id="timer-link" data-t="link" href="proximo.html" hidden>Ya es hora</a>
           </div>
         </section>
@@ -53,7 +53,7 @@
         <section class="slide" aria-roledescription="diapositiva" aria-label="3 de 3">
           <div class="card card--soon">
             <span class="card__sheen" aria-hidden="true"></span>
-            <h2 class="soon__word">Próximamente</h2>
+            <h2 class="soon__word" data-ed="soon.word">Próximamente</h2>
           </div>
         </section>
 

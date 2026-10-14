@@ -1,5 +1,9 @@
-import C from "./proximo-contenido.js";
+import DEFAULTS from "./proximo-contenido.js";
+import { applyStatic, editMode, loadContent, markRendered, resolveMedia } from "./content.js";
 import { createMusic } from "./proximo-musica.js";
+
+const C = await loadContent(DEFAULTS, "proximo");
+const EDITING = editMode(); // modo edición de la cuenta admin (js/edit.js)
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -39,15 +43,17 @@ const el = (tag, className, text) => {
   return node;
 };
 
-const photo = (src, alt = "") => {
+const photo = (src, alt = "", path = "") => {
   if (src) {
     const img = el("img");
-    img.src = src;
+    resolveMedia(src).then((url) => url && (img.src = url));
     img.alt = alt;
     img.loading = "lazy";
+    if (path) img.dataset.edImg = path;
     return img;
   }
   const ph = el("div", "ph");
+  if (path) ph.dataset.edImg = path;
   ph.innerHTML =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" /><circle cx="12" cy="13.5" r="3.2" /></svg><span>Tu foto aquí</span>';
   return ph;
@@ -56,6 +62,7 @@ const photo = (src, alt = "") => {
 $("#intro-line").textContent = C.frase;
 $("#hero-name").textContent = C.nombre;
 $("#hero-sub").textContent = "Cinco flores, cinco razones y una pregunta.";
+applyStatic(C);
 $("#nos-title").textContent = C.nosotros.titulo;
 $("#nos-text").textContent = C.nosotros.texto;
 $("#pro-title").textContent = C.promesas.titulo;
@@ -67,14 +74,22 @@ $("#end-text").textContent = C.ramo.texto;
 
 C.nosotros.fotos.forEach((f, i) => {
   const frame = el("figure", "frame reveal");
-  frame.append(photo(f.src, f.pie), el("figcaption", "frame__cap", f.pie));
+  const cap = el("figcaption", "frame__cap", f.pie);
+  cap.dataset.ed = `nosotros.fotos.${i}.pie`;
+  frame.dataset.edItem = "";
+  frame.append(photo(f.src, f.pie, `nosotros.fotos.${i}.src`), cap);
   frame.style.setProperty("--d", `${(i % 2) * 90}ms`);
   $("#frames").append(frame);
 });
 
 C.promesas.lista.forEach((p, i) => {
   const li = el("li", "promise reveal");
-  li.append(el("span", "promise__num", String(i + 1).padStart(2, "0")), el("h3", "promise__title", p.titulo), el("p", "promise__text", p.texto));
+  const pt = el("h3", "promise__title", p.titulo);
+  pt.dataset.ed = `promesas.lista.${i}.titulo`;
+  const px = el("p", "promise__text", p.texto);
+  px.dataset.ed = `promesas.lista.${i}.texto`;
+  li.dataset.edItem = "";
+  li.append(el("span", "promise__num", String(i + 1).padStart(2, "0")), pt, px);
   $("#promises").append(li);
 });
 
@@ -287,15 +302,16 @@ hold.addEventListener("keyup", (e) => {
 markNext();
 
 // ---------- Entrar al contenido ----------
-enterBtn.addEventListener("click", () => {
-  music.start();
+function enterPage({ playMusic = true } = {}) {
+  if (playMusic) music.start();
   intro.classList.add("is-out");
   page.inert = false;
   document.body.classList.remove("is-locked");
   scrollTo(0, 0);
   setTimeout(() => (intro.hidden = true), reduceMotion ? 0 : 1300);
   observe();
-});
+}
+enterBtn.addEventListener("click", () => enterPage());
 
 // Aparecer al hacer scroll
 function observe() {
@@ -355,3 +371,11 @@ function celebrate() {
     h.addEventListener("animationend", () => h.remove());
   }
 }
+
+// Modo edición (solo cuenta admin): se salta el ramo de flores y deja todo a la vista.
+if (EDITING) {
+  finished = true;
+  enterPage({ playMusic: false });
+  intro.hidden = true;
+}
+markRendered();

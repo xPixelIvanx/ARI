@@ -1,6 +1,7 @@
 // Inicio de sesión con Google (Firebase Auth) + estadísticas de uso en Firestore (usuarios/{uid}).
-// Se carga en las tres páginas con <script type="module" src="js/session.js" data-page="...">.
-// Con ?editar no se pide login ni se registra nada.
+// Se carga en cada página con <script type="module" src="js/session.js" data-page="...">.
+// Rangos (colección roles/{uid}): "admin" puede editar (js/edit.js); cualquier otra cuenta es "viewer" y solo ve.
+// El primer admin se define por correo en firestore.rules.
 
 const PAGE = document.currentScript?.dataset.page || document.querySelector('script[src*="session.js"]')?.dataset.page || "index";
 
@@ -22,7 +23,7 @@ function currentSection() {
   return null;
 }
 
-if (!new URLSearchParams(location.search).has("editar")) start();
+start();
 
 async function start() {
   const gate = buildGate();
@@ -45,8 +46,36 @@ async function start() {
     if (!tracking) {
       tracking = true;
       track(fb, user).catch(() => {});
+      loadRole(fb, user).catch(() => {});
     }
   });
+}
+
+// Averigua el rango de la cuenta (y lo crea la primera vez). Solo "admin" carga el modo edición.
+async function loadRole(fb, user) {
+  const { db, doc, getDoc, setDoc, serverTimestamp } = fb;
+  const ref = doc(db, "roles", user.uid);
+  let rol = "viewer";
+  try {
+    const snap = await getDoc(ref);
+    if (snap.exists()) rol = snap.data().rol;
+    else {
+      // Las reglas solo aceptan "admin" para el correo del dueño; para cualquier otra cuenta se crea como "viewer".
+      const base = { correo: user.email || "", creado: serverTimestamp() };
+      try {
+        await setDoc(ref, { ...base, rol: "admin" });
+        rol = "admin";
+      } catch {
+        await setDoc(ref, { ...base, rol: "viewer" });
+      }
+    }
+  } catch {}
+  window.ARI = { user, rol, page: PAGE };
+  document.documentElement.dataset.rol = rol;
+  if (rol === "admin") {
+    const edit = await import("./edit.js");
+    edit.start({ page: PAGE, getToken: () => user.getIdToken() });
+  }
 }
 
 async function signIn(fb, gate) {

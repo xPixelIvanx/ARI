@@ -1,10 +1,9 @@
 import BASE_CONFIG from "./config.js";
-import { loadContent, resolveMedia } from "./content.js";
+import { applyStatic, editMode, loadContent, markRendered, resolveMedia } from "./content.js";
 import Lenis from "./vendor/lenis.mjs";
 
-// modo edición (temporal)
-const editor = new URLSearchParams(location.search).has("editar") ? await import("./editor.js") : null;
-const CONFIG = editor ? await editor.loadDraft(BASE_CONFIG) : await loadContent(BASE_CONFIG);
+const CONFIG = await loadContent(BASE_CONFIG, "regalo");
+const EDITING = editMode(); // modo edición de la cuenta admin (js/edit.js)
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -297,6 +296,7 @@ function splitWords(node) {
 }
 
 function renderContent() {
+  applyStatic(CONFIG);
   $$("[data-her-name]").forEach((n) => (n.textContent = CONFIG.herName));
   $$("[data-from-name]").forEach((n) => (n.textContent = CONFIG.fromName));
   $$("[data-monogram]").forEach((n) => (n.textContent = CONFIG.monogram));
@@ -311,8 +311,11 @@ function renderContent() {
   greeting.textContent = letter.greeting;
   greeting.style.setProperty("--i", 0);
   const body = $("#letter-body");
+  body.dataset.edList = "letter.paragraphs";
   letter.paragraphs.forEach((text, i) => {
     const p = el("p", null, text);
+    p.dataset.ed = `letter.paragraphs.${i}`;
+    p.dataset.edItem = "";
     p.style.setProperty("--i", i + 1);
     body.append(p);
   });
@@ -635,8 +638,10 @@ const lightbox = (() => {
 
 function renderGallery() {
   const grid = $("#gallery");
+  grid.dataset.edList = "memories";
   CONFIG.memories.forEach((m, i) => {
     const fig = el("figure", "memory reveal");
+    fig.dataset.edItem = "";
     fig.style.setProperty("--d", `${(i % 3) * 0.1}s`);
 
     let media;
@@ -654,12 +659,17 @@ function renderGallery() {
       media.append(el("span", "ph-label", "Tu foto aquí"));
     }
     media.type = "button";
+    media.dataset.edImg = `memories.${i}.src`;
     media.style.aspectRatio = m.ratio || "4/5";
     media.setAttribute("aria-label", `Ver recuerdo: ${m.caption}`);
     media.addEventListener("click", () => lightbox.open(i));
 
     const cap = el("figcaption");
-    cap.append(el("span", "memory__caption", m.caption), el("span", "memory__date", m.date));
+    const capText = el("span", "memory__caption", m.caption);
+    capText.dataset.ed = `memories.${i}.caption`;
+    const capDate = el("span", "memory__date", m.date);
+    capDate.dataset.ed = `memories.${i}.date`;
+    cap.append(capText, capDate);
     fig.append(media, cap);
     grid.append(fig);
   });
@@ -670,6 +680,7 @@ function renderGallery() {
 function coverArt(song, i, className) {
   if (song.cover) {
     const img = el("img", className);
+    img.dataset.edImg = `songs.${i}.cover`;
     setSrc(img, song.cover);
     img.alt = "";
     img.loading = "lazy";
@@ -677,14 +688,17 @@ function coverArt(song, i, className) {
     return img;
   }
   const ph = el("span", `${className} is-placeholder ph-${i % 4}`);
+  ph.dataset.edImg = `songs.${i}.cover`;
   ph.append(el("span", "ph-label", "♪"));
   return ph;
 }
 
 function renderSongs() {
   const wrap = $("#songs");
+  wrap.dataset.edList = "songs";
   (CONFIG.songs || []).forEach((s, i) => {
     const item = el("article", "song reveal");
+    item.dataset.edItem = "";
 
     const deck = el("button", "song__deck");
     deck.type = "button";
@@ -701,12 +715,13 @@ function renderSongs() {
     deck.append(vinyl, sleeve);
 
     const text = el("div", "song__text");
-    text.append(
-      el("p", "song__title", s.title),
-      el("p", "song__artist", s.artist),
-      el("p", "song__hint", "Toca el disco"),
-      el("blockquote", "song__quote", s.quote)
-    );
+    const sTitle = el("p", "song__title", s.title);
+    sTitle.dataset.ed = `songs.${i}.title`;
+    const sArtist = el("p", "song__artist", s.artist);
+    sArtist.dataset.ed = `songs.${i}.artist`;
+    const sQuote = el("blockquote", "song__quote", s.quote);
+    sQuote.dataset.ed = `songs.${i}.quote`;
+    text.append(sTitle, sArtist, el("p", "song__hint", "Toca el disco"), sQuote);
 
     let opened = false;
     deck.addEventListener("click", () => {
@@ -727,8 +742,10 @@ function renderSongs() {
 
 function renderCards() {
   const wrap = $("#cards");
+  wrap.dataset.edList = "openWhen";
   CONFIG.openWhen.forEach((c, i) => {
     const card = el("button", "card reveal");
+    card.dataset.edItem = "";
     card.type = "button";
     card.style.setProperty("--d", `${(i % 4) * 0.08}s`);
     card.setAttribute("aria-expanded", "false");
@@ -862,4 +879,14 @@ setupReveal();
 setupParallax();
 const openGift = setupSeal();
 setupGate();
-editor?.mount({ openGift, lenis }); // modo edición (temporal)
+
+// Modo edición (solo cuenta admin): sin intro y con todo a la vista para editarlo en la página.
+if (EDITING) {
+  $("#gate")?.remove();
+  openGift();
+  $("#envelope-wrap").hidden = true;
+  const letter = $("#letter");
+  letter.hidden = false;
+  letter.classList.add("is-visible");
+}
+markRendered();
