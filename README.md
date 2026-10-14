@@ -39,6 +39,15 @@ Si entras con la cuenta admin aparece el botón **✎ Editar** (abajo a la izqui
 - **Ajustes:** lo que no está a la vista (nombres, fecha del contador, frases de la intro, las 5 flores, música, secreto, fecha de la cuenta regresiva).
 - **Confirmar cambios** publica en Firestore; ella lo ve al abrir o recargar. Mientras no confirmes, los cambios son un borrador en tu dispositivo. **Descartar** vuelve a lo publicado y **Salir** te deja ver la página como la ve ella.
 
+### Modo creativo
+
+- **＋ Bloque** (barra de abajo, o el botón **＋ Bloque aquí** que hay debajo de cada sección): agrega un título, texto, frase, emoji grande, foto, botón/enlace, separador o espacio, justo donde quieras. Cada bloque tiene 🎨 (opciones), ↑ ↓ (pasa a la sección vecina si llega al borde), ⧉ duplicar y ✕ quitar.
+- **🎨 Estilo:** toca cualquier texto (o un bloque) y cambia su color, tamaño, negrita, cursiva, alineación, tipo de letra y espacios.
+- **🙈 Ocultar sección:** esconde cualquier sección completa (en el modo edición se ve atenuada para poder volver a mostrarla).
+- **Páginas:** la barra tiene atajos a Inicio, Regalo y Próximo; en el carrusel, el admin siempre ve el botón de la cuenta regresiva, aunque todavía no sea la hora.
+
+Los bloques, estilos y secciones ocultas se guardan junto con el resto del contenido (`blocks`, `styles`, `hidden`) y se pintan para todos desde `js/blocks.js`. Solo existen en páginas con `data-ed-root` en su `<main>` (regalo y proximo).
+
 Para agregar una página nueva al sistema: ponle a sus textos `data-ed="ruta"` (y `data-ed-img`, `data-ed-list` / `data-ed-item` si aplica), incluye `session.js` con su `data-page`, y agrega su entrada en `js/edit-schemas.js`. Las páginas escritas a mano en HTML aplican lo publicado con `applyStatic()` (ver `js/carousel.js`).
 
 ## Rangos

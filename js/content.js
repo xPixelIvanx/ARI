@@ -136,7 +136,13 @@ export function applyStatic(content, root = document) {
 }
 
 // Cada página avisa cuando ya pintó todo, para que el editor sepa que puede preparar los elementos.
-export function markRendered() {
+// También pinta los bloques y estilos libres del admin (js/blocks.js).
+export async function markRendered(page) {
+  try {
+    await (await import("./blocks.js")).decorate(page);
+  } catch (err) {
+    console.warn("No se pudieron pintar los bloques:", err);
+  }
   window.__ariRendered = true;
   document.dispatchEvent(new Event("ari:rendered"));
 }

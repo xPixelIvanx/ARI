@@ -378,4 +378,4 @@ if (EDITING) {
   enterPage({ playMusic: false });
   intro.hidden = true;
 }
-markRendered();
+markRendered("proximo");

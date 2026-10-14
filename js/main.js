@@ -889,4 +889,4 @@ if (EDITING) {
   letter.hidden = false;
   letter.classList.add("is-visible");
 }
-markRendered();
+markRendered("regalo");

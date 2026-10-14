@@ -7,6 +7,13 @@
 // Para una página nueva: agrega aquí su entrada, ponle data-ed a los textos en el HTML y listo.
 // Campo: { k | path, label, type: text | textarea | datetime | range | image | audio | spotify | list }
 
+// Páginas a las que el admin salta desde la barra del modo edición (aunque todavía no sea "la hora").
+export const PAGES = [
+  ["Inicio", "index.html"],
+  ["Regalo", "regalo.html"],
+  ["Próximo", "proximo.html"],
+];
+
 export default {
   regalo: {
     lists: {

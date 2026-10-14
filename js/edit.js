@@ -8,7 +8,8 @@
 // Los cambios se guardan como borrador en este dispositivo; "Confirmar cambios" los publica en Firestore.
 
 import { aliasMedia, docFor, draftStore, editMode, files, getAt, getContent, isLocal, putDoc, resolveMedia, setAt, setEditMode, NoDatabase } from "./content.js";
-import SCHEMAS from "./edit-schemas.js";
+import SCHEMAS, { PAGES } from "./edit-schemas.js";
+import { BLOCK_TYPES, applyHidden, applyStyleKey, newId, sectionsOf } from "./blocks.js";
 
 const CHUNK = 900_000; // Firestore limita cada documento a 1 MiB: los archivos se guardan en trozos.
 const SCROLL_KEY = "ari-edit-scroll";
@@ -21,6 +22,7 @@ let dirty = false;
 let needReload = false;
 let statusEl;
 let panel = null;
+let activeKey = ""; // último texto o bloque tocado (para el botón "Estilo")
 
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
@@ -41,6 +43,7 @@ export async function start(opts) {
   getToken = opts.getToken;
   schema = { lists: {}, settings: [], ...(SCHEMAS[page] || {}) };
   document.head.append(h("link", { rel: "stylesheet", href: "css/edit.css" }));
+  rendered().then(adminExtras);
 
   if (!editMode()) {
     document.body.append(
@@ -49,6 +52,22 @@ export async function start(opts) {
     return;
   }
   await activate();
+}
+
+const rendered = () =>
+  window.__ariRendered
+    ? Promise.resolve()
+    : new Promise((resolve) => {
+        document.addEventListener("ari:rendered", resolve, { once: true });
+        setTimeout(resolve, 6000);
+      });
+
+// El admin puede entrar a las páginas antes de "la hora": se muestra el botón de la cuenta regresiva.
+function adminExtras() {
+  const links = $$('[data-t="link"]');
+  if (!links.length) return;
+  links.forEach((n) => (n.hidden = false));
+  dispatchEvent(new Event("resize")); // el carrusel vuelve a medir sus tarjetas
 }
 
 /* ---------- Estado y borrador ---------- */
@@ -96,17 +115,21 @@ async function activate() {
   draft = structuredClone(await getContent(page));
   dirty = draftStore.isDirty(page);
 
-  if (!window.__ariRendered) {
-    await new Promise((resolve) => {
-      document.addEventListener("ari:rendered", resolve, { once: true });
-      setTimeout(resolve, 6000);
-    });
-  }
+  draft.blocks ??= [];
+  draft.styles ??= {};
+  draft.hidden ??= {};
+  await rendered();
   document.documentElement.classList.add("ed-on");
   $$(".reveal").forEach((n) => n.classList.add("is-in"));
 
   installGuards();
   $$("[data-ed]").forEach(makeText);
+  document.addEventListener("focusin", (e) => {
+    const t = e.target.closest?.("[data-ed]");
+    if (!t) return;
+    const block = t.closest(".ari-block");
+    activeKey = block ? `block:${block.dataset.block}` : t.dataset.ed;
+  });
   $$("[data-ed-img]").forEach((n) => n.classList.add("ed-img"));
   buildOverlay();
   buildBar();
@@ -286,6 +309,31 @@ function buildOverlay() {
     }
   });
 
+  // Bloques libres: estilo, ↑ ↓, duplicar, quitar.
+  $$(".ari-block").forEach((item) => {
+    const id = item.dataset.block;
+    const btn = (act, label, title) => h("button", { type: "button", class: "ed-tool", "data-ed-act": act, "data-id": id, title, "aria-label": title }, label);
+    const box = h("div", { class: "ed-tools" }, btn("b-style", "🎨", "Estilo y opciones"), btn("b-up", "↑", "Subir"), btn("b-down", "↓", "Bajar"), btn("b-dup", "⧉", "Duplicar"), btn("b-del", "✕", "Quitar"));
+    overlay.append(box);
+    tools.push({ item, box });
+  });
+
+  // Secciones: ocultar / mostrar.
+  sectionsOf().forEach(({ id, node }) => {
+    const label = () => (draft.hidden[id] ? "👁 Mostrar sección" : "🙈 Ocultar sección");
+    const b = h("button", { type: "button", class: "ed-pill", "data-ed-act": "sec-hide", "data-slot": id }, label());
+    b.refresh = () => (b.textContent = label());
+    overlay.append(b);
+    tools.push({ item: node, box: b, pos: "top" });
+  });
+
+  // Ranuras: "+ Bloque aquí" debajo de cada sección.
+  $$(".ari-slot").forEach((slot) => {
+    const b = h("button", { type: "button", class: "ed-add", "data-ed-act": "slot-add", "data-slot": slot.dataset.slot }, "＋ Bloque aquí");
+    overlay.append(b);
+    tools.push({ container: slot, box: b, pos: "slot" });
+  });
+
   if (!tools.length) return;
   const place = () => {
     for (const t of tools) {
@@ -294,7 +342,13 @@ function buildOverlay() {
       t.box.hidden = !visible;
       if (!visible) continue;
       const w = t.box.offsetWidth;
-      if (t.add) {
+      if (t.pos === "top") {
+        const y = Math.min(Math.max(r.top + 8, 8), Math.max(8, r.bottom - 44));
+        t.box.style.transform = `translate(${Math.max(6, r.left + r.width / 2 - w / 2)}px, ${y}px)`;
+      } else if (t.pos === "slot") {
+        t.box.hidden = r.bottom > innerHeight - 70;
+        t.box.style.transform = `translate(12px, ${Math.max(6, r.bottom - 14)}px)`;
+      } else if (t.add) {
         const y = Math.min(Math.max(r.bottom + 6, 6), innerHeight - 90);
         t.box.style.transform = `translate(${Math.max(6, r.left + r.width / 2 - w / 2)}px, ${y}px)`;
       } else {
@@ -308,6 +362,20 @@ function buildOverlay() {
 }
 
 function runAction(btn) {
+  const act0 = btn.dataset.edAct;
+  if (act0.startsWith("b-")) return blockAction(act0, btn.dataset.id);
+  if (act0 === "slot-add") return openBlockMenu(btn.dataset.slot);
+  if (act0 === "sec-hide") {
+    const id = btn.dataset.slot;
+    if (draft.hidden[id]) delete draft.hidden[id];
+    else draft.hidden[id] = true;
+    dirty = true;
+    persist();
+    idleStatus();
+    applyHidden(draft.hidden, true);
+    btn.textContent = draft.hidden[id] ? "👁 Mostrar sección" : "🙈 Ocultar sección";
+    return;
+  }
   const path = btn.dataset.path;
   const def = schema.lists[path] || {};
   const arr = getAt(draft, path);
@@ -328,6 +396,148 @@ function runAction(btn) {
 }
 
 const cap = (s = "Elemento") => s.charAt(0).toUpperCase() + s.slice(1);
+
+/* ---------- Bloques libres ---------- */
+
+const slotLabel = (id) => {
+  const node = sectionsOf().find((s) => s.id === id)?.node;
+  const t = node?.querySelector("h1,h2")?.textContent?.trim();
+  return t ? `Después de “${t.slice(0, 28)}”` : `Después de la sección ${id}`;
+};
+
+function openBlockMenu(slotId) {
+  const slots = sectionsOf().map((s) => s.id);
+  let slot = slotId || slots[0];
+  const select = h("select", {}, ...slots.map((id) => h("option", { value: id }, slotLabel(id))));
+  select.value = slot;
+  select.addEventListener("change", () => (slot = select.value));
+  const grid = h(
+    "div",
+    { class: "ed-blocks" },
+    ...Object.entries(BLOCK_TYPES).map(([type, def]) =>
+      h(
+        "button",
+        {
+          type: "button",
+          class: "ed-block-btn",
+          onclick: () => {
+            draft.blocks.push({ id: newId(), type, slot, ...def.make() });
+            dirty = true;
+            reloadPage();
+          },
+        },
+        h("span", { class: "ed-block-btn__icon" }, def.icon),
+        h("span", {}, def.label)
+      )
+    )
+  );
+  openPanel("Agregar un bloque", [h("label", { class: "ed-field" }, h("span", { class: "ed-label" }, "¿Dónde?"), select), grid]);
+}
+
+function blockAction(act, id) {
+  const blocks = draft.blocks;
+  const i = blocks.findIndex((b) => b.id === id);
+  if (i < 0) return;
+  if (act === "b-style") return openStylePanel(`block:${id}`, i);
+  if (act === "b-dup") blocks.splice(i + 1, 0, { ...structuredClone(blocks[i]), id: newId() });
+  else if (act === "b-del") {
+    if (!confirm("¿Quitar este bloque?")) return;
+    delete draft.styles[`block:${id}`];
+    blocks.splice(i, 1);
+  } else if (act === "b-up" || act === "b-down") moveBlock(i, act === "b-up" ? -1 : 1);
+  dirty = true;
+  reloadPage();
+}
+
+// Sube o baja un bloque; si ya está al borde de su ranura, pasa a la sección vecina.
+function moveBlock(i, dir) {
+  const blocks = draft.blocks;
+  const b = blocks[i];
+  const same = blocks.map((x, k) => (x.slot === b.slot ? k : -1)).filter((k) => k >= 0);
+  const j = same[same.indexOf(i) + dir];
+  if (j != null) return ([blocks[i], blocks[j]] = [blocks[j], blocks[i]]);
+  const order = sectionsOf().map((s) => s.id);
+  const next = order[order.indexOf(b.slot) + dir];
+  if (!next) return;
+  blocks.splice(i, 1);
+  b.slot = next;
+  const inNext = blocks.map((x, k) => (x.slot === next ? k : -1)).filter((k) => k >= 0);
+  const at = dir > 0 ? (inNext.length ? inNext[0] : blocks.length) : inNext.length ? inNext[inNext.length - 1] + 1 : blocks.length;
+  blocks.splice(at, 0, b);
+}
+
+// Estilo de un texto de la página o de un bloque (color, tamaño, negrita, cursiva, alineación, letra, márgenes).
+function openStylePanel(key, blockIndex) {
+  const st = (draft.styles[key] ??= {});
+  const set = (prop, val) => {
+    if (val === "" || val == null) delete st[prop];
+    else st[prop] = val;
+    dirty = true;
+    persist();
+    idleStatus();
+    applyStyleKey(key, st);
+  };
+  const row = (label, ...kids) => h("div", { class: "ed-field" }, h("span", { class: "ed-label" }, label), h("div", { class: "ed-row" }, ...kids));
+  const ghost = (text, onclick, pressed) => h("button", { type: "button", class: "ed-btn ed-btn--ghost ed-btn--sm", "aria-pressed": pressed, onclick }, text);
+
+  const slider = (prop, min, max, step, def) => {
+    const input = h("input", { type: "range", min, max, step });
+    input.value = st[prop] ?? def;
+    input.addEventListener("input", () => set(prop, Number(input.value)));
+    return [input, ghost("↺", () => (set(prop, null), (input.value = def)))];
+  };
+  const toggle = (prop, text) => {
+    const b = ghost(text, () => {
+      set(prop, st[prop] ? null : true);
+      b.setAttribute("aria-pressed", String(!!st[prop]));
+    }, String(!!st[prop]));
+    return b;
+  };
+
+  const align = h("div", { class: "ed-seg" });
+  [["left", "Izquierda"], ["center", "Centro"], ["right", "Derecha"]].forEach(([v, text]) => {
+    const b = ghost(text, () => {
+      set("align", st.align === v ? null : v);
+      $$("button", align).forEach((x) => x.setAttribute("aria-pressed", "false"));
+      if (st.align) b.setAttribute("aria-pressed", "true");
+    }, String(st.align === v));
+    align.append(b);
+  });
+
+  const color = h("input", { type: "color" });
+  color.value = st.color || "#000000";
+  color.addEventListener("input", () => set("color", color.value));
+  const font = h("select", {}, ...[["", "Por defecto"], ["serif", "Elegante (serif)"], ["sans", "Moderna (sans)"], ["mono", "Máquina de escribir"]].map(([v, l]) => h("option", { value: v }, l)));
+  font.value = st.font || "";
+  font.addEventListener("change", () => set("font", font.value));
+
+  const bodies = [
+    row("Color", color, ghost("Quitar", () => set("color", null))),
+    row("Tamaño", ...slider("scale", 0.5, 3, 0.05, 1)),
+    row("Estilo", toggle("bold", "Negrita"), toggle("italic", "Cursiva")),
+    row("Alineación", align),
+    row("Letra", font),
+    row("Espacio arriba", ...slider("mt", -40, 160, 2, 0)),
+    row("Espacio abajo", ...slider("mb", -40, 160, 2, 0)),
+  ];
+
+  if (blockIndex != null && draft.blocks[blockIndex]) {
+    const b = draft.blocks[blockIndex];
+    const base = `blocks.${blockIndex}`;
+    const extra = [];
+    if (b.type === "button")
+      extra.push(fieldEl({ path: `${base}.href`, label: "A dónde lleva (enlace)", help: "Ej: https://… o regalo.html" }), fieldEl({ path: `${base}.bg`, label: "Color del botón", type: "color" }));
+    if (b.type === "image")
+      extra.push(
+        fieldEl({ path: `${base}.w`, label: "Ancho (%)", type: "range", min: 20, max: 100, step: 5 }),
+        fieldEl({ path: `${base}.r`, label: "Esquinas redondeadas", type: "range", min: 0, max: 60, step: 2 })
+      );
+    if (b.type === "spacer") extra.push(fieldEl({ path: `${base}.h`, label: "Alto (px)", type: "range", min: 10, max: 300, step: 5 }));
+    bodies.unshift(...extra);
+  }
+  const title = blockIndex != null ? `Bloque: ${BLOCK_TYPES[draft.blocks[blockIndex]?.type]?.label || ""}` : "Estilo del texto";
+  openPanel(title, [h("div", { class: "ed-fields" }, ...bodies)]);
+}
 
 /* ---------- Panel de campos (item y ajustes) ---------- */
 
@@ -388,9 +598,16 @@ function fieldEl(f, base) {
   }
 
   if (type === "range") {
-    const input = h("input", { type: "range", min: "0", max: "1", step: "0.05" });
-    input.value = getAt(draft, path) ?? 0.6;
+    const input = h("input", { type: "range", min: f.min ?? 0, max: f.max ?? 1, step: f.step ?? 0.05 });
+    input.value = getAt(draft, path) ?? f.def ?? 0.6;
     input.addEventListener("input", () => change(path, Number(input.value)));
+    return wrap(input);
+  }
+
+  if (type === "color") {
+    const input = h("input", { type: "color" });
+    input.value = getAt(draft, path) || "#cf6a8a";
+    input.addEventListener("input", () => change(path, input.value));
     return wrap(input);
   }
 
@@ -538,14 +755,32 @@ function buildBar() {
     h(
       "div",
       { class: "ed-bar__actions" },
+      sectionsOf().length > 0 && h("button", { type: "button", class: "ed-btn ed-btn--ghost", onclick: () => openBlockMenu() }, "＋ Bloque"),
+      h("button", { type: "button", class: "ed-btn ed-btn--ghost", onclick: styleActive }, "🎨 Estilo"),
       schema.settings.length > 0 && h("button", { type: "button", class: "ed-btn ed-btn--ghost", onclick: openSettings }, "Ajustes"),
       h("button", { type: "button", class: "ed-btn ed-btn--ghost", onclick: discard }, "Descartar"),
       publishBtn,
       h("button", { type: "button", class: "ed-btn ed-btn--ghost", onclick: exit, title: "Ver la página como la ve ella" }, "Salir")
+    ),
+    h(
+      "nav",
+      { class: "ed-bar__pages", "aria-label": "Páginas" },
+      ...PAGES.map(([name, href]) => h("a", { class: "ed-chip", href, "aria-current": isCurrentPage(href) ? "page" : null }, name))
     )
   );
   bar.addEventListener("keydown", (e) => e.stopPropagation());
   document.body.append(bar);
+}
+
+function isCurrentPage(href) {
+  const here = location.pathname.split("/").pop().replace(/\.html$/, "") || "index";
+  return here === href.replace(/\.html$/, "");
+}
+
+function styleActive() {
+  if (!activeKey) return status("Toca primero un texto (o usa 🎨 en un bloque) para darle estilo.", "error");
+  const m = activeKey.match(/^block:(.+)$/);
+  openStylePanel(activeKey, m ? draft.blocks.findIndex((b) => b.id === m[1]) : null);
 }
 
 function discard() {

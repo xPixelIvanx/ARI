@@ -201,4 +201,4 @@ document.fonts?.ready.then(measure);
 measure();
 updateActive();
 ready = true;
-markRendered();
+markRendered("index");

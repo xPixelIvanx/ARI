@@ -1,0 +1,53 @@
+/* Bloques libres agregados desde el modo edición (js/blocks.js). Heredan el color y la tipografía de la página. */
+
+.ari-slot { display: block; }
+.ari-slot:empty { display: none; }
+html.ed-on .ari-slot:empty { display: block; min-height: 1px; }
+
+.ari-block {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 1.1rem max(24px, env(safe-area-inset-left)) 1.1rem max(24px, env(safe-area-inset-right));
+  text-align: center;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+.ari-block > * { margin-left: auto; margin-right: auto; }
+.ari-heading h2 { margin: 0; font: 500 clamp(1.9rem, 6vw, 3rem) / 1.1 "Cormorant Garamond", Georgia, serif; }
+.ari-block p { margin: 0; font-size: 1.05rem; line-height: 1.65; }
+.ari-quote blockquote {
+  margin: 0;
+  font: italic 400 clamp(1.3rem, 4vw, 1.8rem) / 1.35 "Cormorant Garamond", Georgia, serif;
+  opacity: 0.92;
+}
+.ari-emoji div { font-size: clamp(3rem, 12vw, 5rem); line-height: 1.1; }
+.ari-divider div { font-size: 1.3rem; letter-spacing: 0.6em; opacity: 0.6; }
+.ari-figure { margin: 0 auto; }
+.ari-figure img { display: block; width: 100%; height: auto; }
+.ari-figure figcaption { margin-top: 0.6rem; font-size: 0.95rem; opacity: 0.8; }
+.ari-ph {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  padding: 1rem;
+  border: 1.5px dashed currentColor;
+  font-size: 0.9rem;
+  opacity: 0.55;
+  cursor: pointer;
+}
+.ari-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 1.7rem;
+  border-radius: 999px;
+  background: #cf6a8a;
+  color: #fff !important;
+  font: 600 0.95rem "Manrope", system-ui, sans-serif;
+  text-decoration: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ari-block { animation: ari-in 0.6s ease both; }
+  @keyframes ari-in { from { opacity: 0; transform: translateY(10px); } }
+}

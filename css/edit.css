@@ -188,3 +188,49 @@ html.ed-on .reveal { opacity: 1 !important; transform: none !important; }
   .ed-panel__body { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
   html.ed-panel-open .ed-bar { display: none; }
 }
+
+/* ---- Bloques, estilo, secciones ---- */
+.ed-pill {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(29, 26, 30, 0.88);
+  color: #fff;
+  font: 600 12px "Manrope", system-ui, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+.ed-hidden { opacity: 0.35; outline: 2px dashed #b3261e; outline-offset: -4px; }
+.ed-blocks { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.ed-block-btn {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 14px 8px;
+  border: 1px solid var(--ed-line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ed-ink);
+  font: 600 13px "Manrope", system-ui, sans-serif;
+  cursor: pointer;
+}
+.ed-block-btn:hover { border-color: var(--ed-rose); background: #fff4f7; }
+.ed-block-btn__icon { font-size: 26px; line-height: 1.1; }
+.ed-field select { width: 100%; padding: 10px 12px; border: 1px solid var(--ed-line); border-radius: 10px; background: #fff; font: 15px "Manrope", system-ui, sans-serif; color: var(--ed-ink); }
+.ed-field input[type="color"] { width: 56px; height: 40px; padding: 2px; border: 1px solid var(--ed-line); border-radius: 10px; background: #fff; }
+.ed-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ed-row input[type="range"] { flex: 1; min-width: 120px; accent-color: var(--ed-rose); }
+.ed-seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.ed-btn[aria-pressed="true"] { background: var(--ed-rose); border-color: var(--ed-rose); color: #fff; }
+.ed-bar__pages { display: flex; justify-content: center; gap: 6px; width: 100%; }
+.ed-chip {
+  padding: 4px 12px;
+  border: 1px solid var(--ed-line);
+  border-radius: 999px;
+  color: var(--ed-ink);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.ed-chip[aria-current="page"] { background: var(--ed-ink); border-color: var(--ed-ink); color: #fff; }
