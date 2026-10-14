@@ -1,11 +1,11 @@
 // "Rasca aquí": una capa dorada tapa la pregunta final. Hay que rascarla con el dedo (o el mouse):
-// el pincel es chico y cada pasada quita muy poco, pero basta con descubrir poco más de una cuarta parte para que se lea.
+// el pincel es chico y cada pasada quita muy poco, pero basta con descubrir menos de una quinta parte, con la capa apenas clara, para que ya se lea.
 // Entonces la capa se rompe en destellos, el recuadro brilla y aparecen los botones de Sí y No.
 
 const BRUSH = 16; // grosor del pincel en px: chico a propósito
-const POWER = 0.05; // cuánto quita cada "sello" del pincel (se sella cada 5 px): hacen falta ~8 pasadas por zona
-const OPEN_BELOW = 110; // un píxel cuenta como descubierto si su capa ya tiene menos de esta opacidad (0-255)
-const GOAL = 0.28; // fracción del recuadro que debe quedar descubierta (con eso la pregunta ya se lee completa)
+const POWER = 0.05; // cuánto quita cada "sello" del pincel (se sella cada 5 px): hacen falta ~3 pasadas por zona
+const OPEN_BELOW = 165; // un píxel cuenta como descubierto si su capa ya tiene menos de esta opacidad (0-255)
+const GOAL = 0.18; // fracción del recuadro que debe quedar descubierta (con eso la pregunta ya se lee completa)
 
 const HINTS = [
   [0, "Rasca aquí"],
@@ -191,8 +191,8 @@ export function setupScratch({ box, canvas, hint, choices, skip, instant = false
     lastCheck = now;
     const c = cleared();
     progress = c.open;
-    // Avance para las pistas (0-1): lo que ya se lee respecto a la meta, o lo raspado en total (~55% cuando se rasca parejo).
-    const felt = Math.min(1, Math.max(c.open / GOAL, c.soft / 0.55));
+    // Avance para las pistas (0-1): lo que ya se lee respecto a la meta, o lo raspado en total (~38% cuando se rasca parejo).
+    const felt = Math.min(1, Math.max(c.open / GOAL, c.soft / 0.38));
     setHint(HINTS.filter(([from]) => felt >= from).pop()[1]);
     if (c.open >= GOAL) reveal();
   }
