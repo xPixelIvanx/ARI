@@ -1,7 +1,6 @@
 import BASE_CONFIG from "./config.js";
 import { applyStatic, editMode, loadContent, markRendered, resolveMedia } from "./content.js";
 import Lenis from "./vendor/lenis.mjs";
-import { buzz } from "./haptics.js";
 
 const CONFIG = await loadContent(BASE_CONFIG, "regalo");
 const EDITING = editMode(); // modo edición de la cuenta admin (js/edit.js)
@@ -426,7 +425,6 @@ function setupSeal() {
     holding = true;
     seal.classList.add("is-holding");
     music.unlock();
-    buzz(10);
     loop();
   };
 
@@ -452,7 +450,6 @@ function setupSeal() {
     done = true;
     holding = false;
     const intro = $("#intro");
-    buzz([20, 60, 30]);
 
     intro.classList.add("is-open");
     document.body.classList.remove("is-locked");
@@ -794,7 +791,6 @@ function setupSurprises() {
   $("#final-btn").addEventListener("click", (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     petals.burst(r.left + r.width / 2, r.top + r.height / 2, 80);
-    buzz([20, 40, 20]);
     finalSection.classList.add("is-revealed");
     track("final_surprise");
   });

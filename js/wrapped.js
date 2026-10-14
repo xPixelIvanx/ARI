@@ -171,7 +171,6 @@ function play(slides) {
     countUp(view);
     fills.forEach((f, k) => (f.style.transform = `scaleX(${k < i ? 1 : 0})`));
     hint.hidden = i > 0;
-    if (navigator.vibrate && i > 0) navigator.vibrate(6);
   }
 
   function frame(now) {

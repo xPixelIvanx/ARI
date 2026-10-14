@@ -27,7 +27,6 @@ let dotText;
 let menu = null;
 
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
-const buzz = (ms = 10) => navigator.vibrate?.(ms);
 const cap = (s = "Elemento") => s.charAt(0).toUpperCase() + s.slice(1);
 
 function h(tag, attrs = {}, ...children) {
@@ -147,7 +146,6 @@ function travel(from, to, empty) {
   writeHist(hs);
   draft = JSON.parse(snap);
   dirty = true;
-  buzz();
   reloadPage();
 }
 const undo = () => travel("u", "r", "No hay nada que deshacer");
@@ -357,7 +355,6 @@ async function setImage(path, { id, ratio }) {
 async function pickFor(el) {
   const picked = await pickImage();
   if (!picked) return;
-  buzz();
   const live = await setImage(el.dataset.edImg, picked);
   if (!live) reloadPage();
 }
@@ -497,7 +494,6 @@ function beginDrag(e, grip) {
   node.classList.add("ed-dragging");
   document.documentElement.classList.add("ed-dragging-now");
   grip.setPointerCapture?.(e.pointerId);
-  buzz(12);
 
   drag = { kind, node, ghost, indicator, container: node.parentElement, dx: e.clientX - r.left, dy: e.clientY - r.top, x: e.clientX, y: e.clientY, target: null, id: e.pointerId, raf: 0 };
   addEventListener("pointermove", dragMove);
@@ -618,7 +614,6 @@ function dragEnd(e) {
   }
   markDirty();
   refreshEditable();
-  buzz([8, 30, 8]);
   d.node.classList.add("ed-dropped");
   setTimeout(() => d.node.classList.remove("ed-dropped"), 600);
 }
@@ -637,7 +632,6 @@ function runAction(btn) {
     markDirty();
     applyHidden(draft.hidden, true);
     btn.textContent = draft.hidden[id] ? "👁 Mostrar sección" : "🙈 Ocultar sección";
-    buzz();
     return;
   }
 
@@ -700,7 +694,6 @@ function addBlock(type, slotId) {
   if (!node) return;
   markDirty();
   refreshEditable();
-  buzz([8, 30, 8]);
   node.classList.add("ed-dropped");
   setTimeout(() => node.classList.remove("ed-dropped"), 600);
   node.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -730,7 +723,6 @@ function blockAction(act, id) {
   }
   markDirty();
   refreshEditable();
-  buzz();
 }
 
 // Estilo de un texto de la página o de un bloque (color, tamaño, negrita, cursiva, alineación, letra, márgenes).
@@ -1138,7 +1130,6 @@ async function publish(button) {
     dirty = false;
     saveNow();
     updateDot();
-    buzz([10, 40, 10]);
     status("¡Publicado! ✓ Ya lo puede ver.", "ok");
   } catch (err) {
     status(err instanceof NoDatabase ? "Falta crear la base de datos en Firebase (Firestore)." : err.message || "Algo salió mal al publicar.", "error");
