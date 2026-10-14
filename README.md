@@ -72,3 +72,21 @@ Las tres páginas (`index.html`, `regalo.html`, `proximo.html`) se adaptan a cel
 - **Nada se corta:** las intros hacen scroll si la pantalla es muy baja (celular acostado o con zoom), el visor de fotos tiene su propio scroll, y el carrusel agranda sus tarjetas si el contenido lo necesita.
 - **Áreas táctiles:** botones y enlaces miden al menos 44 px.
 - **Muescas y barras:** los márgenes respetan `env(safe-area-inset-*)`.
+
+## Login con Google y estadísticas
+
+Las tres páginas piden iniciar sesión con Google (`js/session.js`, estilo en `css/auth.css`). Con `?editar` no se pide login ni se registra nada.
+
+Al crearse la cuenta se guarda `usuarios/{uid}` en Firestore, y después se va actualizando:
+
+- `aperturas`: cuántas veces se abrió una página (total y por página en `paginas.<página>.aperturas`).
+- `segundos`: tiempo total con la pestaña visible (y por página en `paginas.<página>.segundos`).
+- `apartados.<página>_<apartado>`: segundos dentro de cada apartado (`regalo_carta`, `regalo_recuerdos`, `proximo_pregunta`, `intro`, etc.; en el carrusel, el folleto al frente).
+
+Para activarlo en Firebase:
+
+1. **Authentication > Sign-in method**: activar *Google*.
+2. **Authentication > Settings > Authorized domains**: agregar el dominio de Vercel.
+3. **Firestore > Rules**: pegar el contenido de `firestore.rules` y publicar (cada persona solo lee/escribe su propio documento).
+
+Las estadísticas se ven en la consola de Firebase > Firestore > `usuarios`.

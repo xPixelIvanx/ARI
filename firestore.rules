@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Contenido que publica el editor (fotos, textos, música): se lee y escribe sin login, como antes.
+    match /edicion/{doc} {
+      allow read, write: if true;
+    }
+    match /archivos/{doc} {
+      allow read, write: if true;
+    }
+    // Estadísticas: cada persona solo accede a su propio documento.
+    match /usuarios/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

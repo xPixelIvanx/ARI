@@ -77,6 +77,7 @@ function updateActive() {
   const front = mod(Math.round(target));
   if (front === active) return;
   active = front;
+  scene.dataset.front = String(front % CARDS); // lo lee session.js para las estadísticas
   slots.forEach((slot, i) => slot.toggleAttribute("inert", i !== front));
 }
 

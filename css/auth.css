@@ -1,0 +1,37 @@
+/* Pantalla de inicio de sesión (js/session.js). Autónoma: no depende del estilo de cada página. */
+.auth {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: grid;
+  place-items: center;
+  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  overflow-y: auto;
+  background: #0b0a10;
+  color: #f6eef1;
+  font-family: "Manrope", system-ui, sans-serif;
+  text-align: center;
+  transition: opacity 0.5s ease;
+}
+.auth.is-leaving { opacity: 0; pointer-events: none; }
+.auth__box { width: min(100%, 22rem); display: grid; gap: 1.1rem; justify-items: center; }
+.auth__mono {
+  display: grid; place-items: center; width: 3.4rem; height: 3.4rem; border-radius: 50%;
+  background: #cf6a8a; font: italic 500 1.8rem "Cormorant Garamond", Georgia, serif; color: #fff;
+}
+.auth__title { margin: 0; font: 500 1.9rem/1.15 "Cormorant Garamond", Georgia, serif; }
+.auth__text { margin: 0; font-size: 0.95rem; line-height: 1.5; color: #cdbfc5; }
+.auth__btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.7rem;
+  min-height: 48px; padding: 0 1.4rem; border: 0; border-radius: 999px;
+  background: #fff; color: #2a2327; font: 600 0.95rem "Manrope", system-ui, sans-serif; cursor: pointer;
+}
+.auth__btn:disabled { opacity: 0.6; cursor: default; }
+.auth__btn svg { width: 1.2rem; height: 1.2rem; flex: none; }
+.auth__error { min-height: 1.2em; margin: 0; font-size: 0.85rem; color: #f2a0b5; }
+.auth__spin {
+  width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2); border-top-color: #cf6a8a; animation: auth-spin 0.8s linear infinite;
+}
+@keyframes auth-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .auth__spin { animation-duration: 3s; } .auth { transition: none; } }
