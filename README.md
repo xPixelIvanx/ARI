@@ -115,5 +115,5 @@ Con una cuenta admin, el chip del carrusel tiene **📊 Panel de estadísticas**
 
 ### Wrapped (`wrapped.html`)
 
-Historias a pantalla completa con su tiempo total, visitas, rincón favorito, hora favorita, lo que tocó y **premios de broma** (`awards()` en `js/stats-lib.js`). En el carrusel es la 4.ª tarjeta y se abre en año nuevo; la fecha y el mensaje final se cambian desde el modo edición (carrusel > Ajustes, y Wrapped > Ajustes). El admin puede verlo siempre y ver el de cualquier cuenta con `?uid=`.
+Historias a pantalla completa con su tiempo total, visitas, rincón favorito, hora favorita, lo que tocó y **premios de broma** (`awards()` en `js/stats-lib.js`). En el carrusel es la 4.ª tarjeta: aparece una semana antes de la fecha (con cuenta regresiva) y se abre en año nuevo; el admin la ve siempre; la fecha y el mensaje final se cambian desde el modo edición (carrusel > Ajustes, y Wrapped > Ajustes). El admin puede verlo siempre y ver el de cualquier cuenta con `?uid=`.
 

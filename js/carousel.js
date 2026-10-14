@@ -12,6 +12,16 @@ const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const scene = document.getElementById("scene");
 const ring = document.getElementById("ring");
 
+// Wrapped: la tarjeta aparece una semana antes de la fecha y se abre en año nuevo (fecha editable en el modo edición > Ajustes).
+// El admin la ve siempre (js/session.js deja la marca "ari-admin" en este dispositivo).
+const WRAPPED = new Date(CONTENT.wrapped);
+const WRAPPED_VISIBLE_FROM = WRAPPED.getTime() - 7 * 86400000;
+let isAdminHint = false;
+try {
+  isAdminHint = localStorage.getItem("ari-admin") === "1";
+} catch {}
+if (!isAdminHint && Date.now() < WRAPPED_VISIBLE_FROM) document.querySelector(".card--wrapped")?.closest(".slide")?.remove();
+
 // ---------- Anillo: los folletos + sus clones ----------
 const originals = [...ring.children];
 const CARDS = originals.length; // folletos reales
@@ -196,8 +206,6 @@ function tick() {
 tick();
 timerId = setInterval(tick, 1000);
 
-// Wrapped: se abre en año nuevo (la fecha se cambia desde el modo edición > Ajustes).
-const WRAPPED = new Date(CONTENT.wrapped);
 function wrappedTick() {
   const ms = WRAPPED - Date.now();
   if (ms <= 0) {

@@ -112,6 +112,14 @@ async function loadRole(fb, user, profile = {}) {
       }
     }
   } catch {}
+  // Marca solo para mostrar al admin lo que todavía está oculto (la tarjeta del Wrapped); la seguridad real son las reglas.
+  let wasAdmin = false;
+  try {
+    wasAdmin = localStorage.getItem("ari-admin") === "1";
+    if (rol === "admin") localStorage.setItem("ari-admin", "1");
+    else localStorage.removeItem("ari-admin");
+  } catch {}
+  if (rol === "admin" && !wasAdmin && PAGE === "index") location.reload();
   window.ARI = { user, rol, page: PAGE, fb, profile };
   document.documentElement.dataset.rol = rol;
   document.dispatchEvent(new CustomEvent("ari:role", { detail: window.ARI }));
