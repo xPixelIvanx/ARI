@@ -8,7 +8,10 @@ const PAGE = document.currentScript?.dataset.page || document.querySelector('scr
 // Cómo saber en qué apartado está ella ahora mismo (se evalúa cada segundo).
 const SECTIONS = {
   regalo: [["inicio", "header.hero"], ["carta", "#carta"], ["recuerdos", "#recuerdos"], ["canciones", "#canciones"], ["abre_cuando", "#abre-cuando"], ["final", "#final"]],
-  proximo: [["inicio", "header.hero"], ["nosotros", "#nosotros"], ["promesas", "#promesas"], ["pregunta", "#pregunta"]],
+  proximo: [
+    ["inicio", "header.hero"], ["historia", "#historia"], ["antes", "#antes"], ["ensenaste", "#ensenaste"],
+    ["planes", "#planes"], ["promesas", "#promesas"], ["futuro", "#futuro"], ["pregunta", "#pregunta"],
+  ],
 };
 const CAROUSEL = ["regalo", "cuenta_regresiva", "proximamente", "wrapped"];
 

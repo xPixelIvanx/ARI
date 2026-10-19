@@ -17,8 +17,13 @@ export const SECTION_NAMES = {
   regalo_final: "Regalo · la sorpresa final",
   proximo_intro: "La pregunta · las flores",
   proximo_inicio: "La pregunta · el inicio",
+  proximo_historia: "La pregunta · la línea de tiempo",
+  proximo_antes: "La pregunta · entonces y hoy",
+  proximo_ensenaste: "La pregunta · lo que me enseñaste",
   proximo_nosotros: "La pregunta · nosotros",
+  proximo_planes: "La pregunta · planes",
   proximo_promesas: "La pregunta · las promesas",
+  proximo_futuro: "La pregunta · la carta al futuro",
   proximo_pregunta: "La pregunta · la pregunta",
 };
 

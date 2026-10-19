@@ -12,11 +12,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/proximo.css" />
+  <link rel="stylesheet" href="css/proximo-secciones.css" />
   <script type="module" src="js/proximo.js"></script>
   <link rel="stylesheet" href="css/auth.css" />
   <script type="module" src="js/session.js" data-page="proximo"></script>
 </head>
 <body class="is-locked">
+  <div class="progress" id="progress" aria-hidden="true"><span></span></div>
   <a class="back" href="index.html" aria-label="Volver al carrusel"><span aria-hidden="true">←</span><span class="back__label">Volver</span></a>
   <div class="stars" aria-hidden="true"></div>
 
@@ -63,25 +65,90 @@
       <p class="eyebrow reveal" data-ed="ui.para">Para</p>
       <h1 class="hero__name reveal" id="hero-name"></h1>
       <p class="hero__sub reveal" id="hero-sub" data-ed="ui.heroSub"></p>
-      <a class="scroll-cue reveal" href="#nosotros">Sigue bajando</a>
+      <a class="scroll-cue reveal" href="#historia">Sigue bajando</a>
     </header>
 
-    <section class="section" id="nosotros">
+    <!-- Línea de tiempo -->
+    <section class="section" id="historia">
       <div class="section__head reveal">
-        <span class="section__num">01</span>
-        <h2 class="section__title" id="nos-title" data-ed="nosotros.titulo"></h2>
-        <p class="section__lead" id="nos-text" data-ed="nosotros.texto"></p>
+        <span class="section__num"></span>
+        <h2 class="section__title" data-ed="historia.titulo"></h2>
+        <p class="section__lead" data-ed="historia.texto"></p>
       </div>
-      <div class="frames" id="frames" data-ed-list="nosotros.fotos"></div>
+      <ol class="tl" id="tl" data-ed-list="historia.momentos"></ol>
+      <div class="tl-end reveal" id="tl-end">
+        <span class="tl-end__line" aria-hidden="true"></span>
+        <span class="tl-end__dot" aria-hidden="true"></span>
+        <p class="tl-end__title" data-ed="historia.cierre"></p>
+        <p class="tl-end__text" data-ed="historia.cierreTexto"></p>
+      </div>
+    </section>
+
+    <!-- Antes y ahora -->
+    <section class="section" id="antes">
+      <div class="section__head reveal">
+        <span class="section__num"></span>
+        <h2 class="section__title" data-ed="antes.titulo"></h2>
+        <p class="section__lead" data-ed="antes.texto"></p>
+      </div>
+      <div class="then reveal" id="then">
+        <div class="then__toggle" role="group" aria-label="Entonces u hoy">
+          <span class="then__pill" aria-hidden="true"></span>
+          <button type="button" class="then__opt" data-state="entonces" aria-pressed="true" id="then-a"></button>
+          <button type="button" class="then__opt" data-state="hoy" aria-pressed="false" id="then-b"></button>
+        </div>
+        <ul class="then__list" id="then-list" data-ed-list="antes.pares"></ul>
+      </div>
+    </section>
+
+    <!-- Cosas que me enseñaste -->
+    <section class="section" id="ensenaste">
+      <div class="section__head reveal">
+        <span class="section__num"></span>
+        <h2 class="section__title" data-ed="ensenaste.titulo"></h2>
+        <p class="section__lead" data-ed="ensenaste.texto"></p>
+      </div>
+      <ol class="lessons" id="lessons" data-ed-list="ensenaste.lista"></ol>
+      <div class="lessons-end reveal" id="lessons-end">
+        <p class="lessons-end__title" data-ed="ensenaste.cierre"></p>
+        <p class="lessons-end__text" data-ed="ensenaste.cierreTexto"></p>
+      </div>
+    </section>
+
+    <!-- Planes contigo -->
+    <section class="section" id="planes">
+      <div class="section__head reveal">
+        <span class="section__num"></span>
+        <h2 class="section__title" data-ed="planes.titulo"></h2>
+        <p class="section__lead" data-ed="planes.texto"></p>
+      </div>
+      <ul class="plans" id="plans" data-ed-list="planes.lista"></ul>
+      <div class="plans__meter reveal" id="plans-meter">
+        <div class="plans__bar"><span id="plans-fill"></span></div>
+        <p class="plans__count" id="plans-count"></p>
+      </div>
     </section>
 
     <section class="section" id="promesas">
       <div class="section__head reveal">
-        <span class="section__num">02</span>
+        <span class="section__num"></span>
         <h2 class="section__title" id="pro-title" data-ed="promesas.titulo"></h2>
         <p class="section__lead" id="pro-text" data-ed="promesas.texto"></p>
       </div>
       <ol class="promises" id="promises" data-ed-list="promesas.lista"></ol>
+    </section>
+
+    <!-- Carta al futuro (se escribe sola) -->
+    <section class="section" id="futuro">
+      <div class="section__head reveal">
+        <span class="section__num"></span>
+        <h2 class="section__title" data-ed="futuro.titulo"></h2>
+        <p class="section__lead" data-ed="futuro.texto"></p>
+      </div>
+      <div class="future reveal" id="future">
+        <div class="future__lines" id="future-lines" data-ed-list="futuro.carta"></div>
+        <p class="future__sign" id="future-sign"></p>
+      </div>
     </section>
 
     <section class="section ask" id="pregunta">

@@ -2,6 +2,7 @@ import DEFAULTS from "./proximo-contenido.js";
 import { setupScratch } from "./scratch.js";
 import { applyStatic, editMode, loadContent, markRendered, resolveMedia } from "./content.js";
 import { createMusic } from "./proximo-musica.js";
+import { setupSections } from "./proximo-secciones.js";
 
 const C = await loadContent(DEFAULTS, "proximo");
 const EDITING = editMode(); // modo edición de la cuenta admin (js/edit.js)
@@ -51,8 +52,6 @@ $("#intro-line").textContent = C.frase;
 $("#hero-name").textContent = C.nombre;
 $("#hero-sub").textContent = "Cinco flores, cinco razones y una pregunta.";
 applyStatic(C);
-$("#nos-title").textContent = C.nosotros.titulo;
-$("#nos-text").textContent = C.nosotros.texto;
 $("#pro-title").textContent = C.promesas.titulo;
 $("#pro-text").textContent = C.promesas.texto;
 $("#ask-kicker").textContent = C.pregunta.kicker;
@@ -68,20 +67,13 @@ setupScratch({
   onReveal: () => dispatchEvent(new CustomEvent("ari:action", { detail: { name: "proximo_rascado" } })),
 });
 $("#end-title").textContent = `${C.ramo.titulo}, ${C.nombre}`;
+
+// Línea de tiempo, entonces/hoy, lo que me enseñaste, planes y carta al futuro (js/proximo-secciones.js)
+const sections = setupSections({ C, EDITING, reduceMotion, el, photo });
 $("#end-text").textContent = C.ramo.texto;
 
-C.nosotros.fotos.forEach((f, i) => {
-  const frame = el("figure", "frame reveal");
-  const cap = el("figcaption", "frame__cap", f.pie);
-  cap.dataset.ed = `nosotros.fotos.${i}.pie`;
-  frame.dataset.edItem = "";
-  frame.append(photo(f.src, f.pie, `nosotros.fotos.${i}.src`), cap);
-  frame.style.setProperty("--d", `${(i % 2) * 90}ms`);
-  $("#frames").append(frame);
-});
-
 C.promesas.lista.forEach((p, i) => {
-  const li = el("li", "promise reveal");
+  const li = el("li", "promise glow-card reveal");
   const pt = el("h3", "promise__title", p.titulo);
   pt.dataset.ed = `promesas.lista.${i}.titulo`;
   const px = el("p", "promise__text", p.texto);
@@ -304,6 +296,7 @@ function enterPage({ playMusic = true } = {}) {
   scrollTo(0, 0);
   setTimeout(() => (intro.hidden = true), reduceMotion ? 0 : 1300);
   observe();
+  sections.start();
 }
 enterBtn.addEventListener("click", () => {
   dispatchEvent(new CustomEvent("ari:action", { detail: { name: "proximo_entrar" } }));

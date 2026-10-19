@@ -91,14 +91,6 @@ export default {
           { k: "foto", label: "Foto", type: "image" },
         ],
       },
-      "nosotros.fotos": {
-        label: "foto",
-        new: { src: "", pie: "Nuevo momento" },
-        fields: [
-          { k: "src", label: "Foto", type: "image" },
-          { k: "pie", label: "Texto" },
-        ],
-      },
       "promesas.lista": {
         label: "promesa",
         new: { titulo: "Nueva promesa", texto: "Escribe aquí." },
@@ -108,6 +100,34 @@ export default {
         ],
       },
       "pregunta.noTextos": { label: "texto", new: "Otro texto", rows: 1 },
+      "historia.momentos": {
+        label: "momento",
+        new: { fecha: "Fecha", titulo: "Nuevo momento", texto: "Escribe aquí.", foto: "" },
+        fields: [
+          { k: "fecha", label: "Fecha o etiqueta" },
+          { k: "titulo", label: "Título" },
+          { k: "texto", label: "Texto", type: "textarea", rows: 3 },
+          { k: "foto", label: "Foto", type: "image" },
+        ],
+      },
+      "antes.pares": {
+        label: "par",
+        new: { entonces: "Lo que pensé.", hoy: "Lo que pienso hoy." },
+        fields: [
+          { k: "entonces", label: "Entonces", type: "textarea", rows: 2 },
+          { k: "hoy", label: "Hoy", type: "textarea", rows: 2 },
+        ],
+      },
+      "ensenaste.lista": { label: "cosa", new: "Algo que me enseñaste.", rows: 2 },
+      "planes.lista": {
+        label: "plan",
+        new: { titulo: "Nuevo plan", texto: "" },
+        fields: [
+          { k: "titulo", label: "Plan" },
+          { k: "texto", label: "Detalle (opcional)" },
+        ],
+      },
+      "futuro.carta": { label: "párrafo", new: "Escribe aquí.", rows: 3 },
     },
     settings: [
       {
@@ -124,6 +144,13 @@ export default {
         fields: [
           { path: "ramo.titulo", label: "Título (después va su nombre)" },
           { path: "ramo.texto", label: "Texto", type: "textarea", rows: 2 },
+        ],
+      },
+      {
+        title: "Botones de “Lo que pensé la primera vez”",
+        fields: [
+          { path: "antes.entonces", label: "Botón de la izquierda" },
+          { path: "antes.hoy", label: "Botón de la derecha" },
         ],
       },
       { title: "Textos del botón No", fields: [{ path: "pregunta.noTextos", type: "list" }] },

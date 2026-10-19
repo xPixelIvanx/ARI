@@ -26,17 +26,77 @@ export default {
     texto: "Cinco flores, cinco razones. Y todavía hay más.",
   },
 
-  // Sección de fotos
-  nosotros: {
-    titulo: "Nosotros",
-    texto: "Algunos momentos que quiero guardar contigo.",
-    fotos: [
-      { src: "", pie: "El día que nos conocimos" },
-      { src: "", pie: "Nuestra primera salida" },
-      { src: "", pie: "Cuando nos reímos sin parar" },
-      { src: "", pie: "Ese día que no quería que terminara" },
-      { src: "", pie: "Contigo, en cualquier lugar" },
-      { src: "", pie: "Una de mis favoritas" },
+  // ---------- Secciones nuevas (todo es de ejemplo: cámbialo por lo de ustedes) ----------
+
+  // Línea de tiempo: se dibuja una línea dorada mientras ella baja
+  historia: {
+    titulo: "Nuestra historia",
+    texto: "Cómo llegamos hasta aquí, un momento a la vez.",
+    momentos: [
+      { fecha: "El comienzo", titulo: "El día que nos conocimos", texto: "No sabía que esa conversación iba a cambiarlo todo.", foto: "" },
+      { fecha: "Unos días después", titulo: "El primer mensaje", texto: "Lo escribí y lo borré como diez veces antes de mandarlo.", foto: "" },
+      { fecha: "Nuestra primera salida", titulo: "Los nervios", texto: "Llegué temprano, me reí de más y aun así quisiste volver a verme.", foto: "" },
+      { fecha: "Ese día", titulo: "Cuando lo supe", texto: "Que no quería conocer a nadie más. Que eras tú.", foto: "" },
+      { fecha: "Hoy", titulo: "Esta página", texto: "Hecha a mano, con el corazón, como me pediste.", foto: "" },
+    ],
+    // Al final de la línea: lo que falta por escribir
+    cierre: "Hasta ahora…",
+    cierreTexto: "Lo que sigue todavía no lo escribimos. Y es lo que más ganas me da.",
+  },
+
+  // Antes y ahora: se cambia con el botón
+  antes: {
+    titulo: "Lo que pensé la primera vez",
+    texto: "Y lo que pienso ahora.",
+    entonces: "Entonces",
+    hoy: "Hoy",
+    pares: [
+      { entonces: "«Qué bonita sonrisa.»", hoy: "Es lo primero que quiero ver cada día." },
+      { entonces: "«Seguro no me va a contestar.»", hoy: "Me contesta, me escucha y me entiende." },
+      { entonces: "«Ojalá pueda volver a verla.»", hoy: "Ojalá pueda verte siempre." },
+      { entonces: "«¿Y si no le caigo bien?»", hoy: "Ahora sé que te gusta hasta lo raro de mí." },
+    ],
+  },
+
+  // Se iluminan una por una al bajar
+  ensenaste: {
+    titulo: "Cosas que me enseñaste",
+    texto: "Sin proponértelo.",
+    lista: [
+      "Que lo simple también puede ser especial.",
+      "Que está bien no tener todo resuelto.",
+      "A escuchar de verdad, no solo a esperar mi turno para hablar.",
+      "Que los detalles pequeños dicen mucho.",
+      "Que puedo ser yo, sin miedo.",
+      "Lo bonito que es esperar algo con ganas.",
+    ],
+    // Al final de la lista
+    cierre: "…y eso es solo hasta ahora.",
+    cierreTexto: "Me faltan muchas cosas por aprender contigo, y quiero aprenderlas todas.",
+  },
+
+  // Lista de planes: ella puede ir palomeándolos
+  planes: {
+    titulo: "Planes contigo",
+    texto: "Una lista que quiero ir tachando a tu lado.",
+    lista: [
+      { titulo: "Ver un amanecer", texto: "Aunque nos cueste levantarnos." },
+      { titulo: "Un viaje, solo los dos", texto: "A donde tú quieras." },
+      { titulo: "Cocinar algo juntos", texto: "Y que salga mal, y reírnos." },
+      { titulo: "Un picnic con flores amarillas", texto: "Obviamente." },
+      { titulo: "Bailar en la cocina", texto: "Sin música, si hace falta." },
+      { titulo: "Una noche de estrellas", texto: "Contar cuántas vemos." },
+    ],
+  },
+
+  // Carta que se escribe sola
+  futuro: {
+    titulo: "Para nosotros, en el futuro",
+    texto: "Lo que espero que sigamos siendo.",
+    carta: [
+      "Espero que sigamos riéndonos de las mismas tonterías.",
+      "Que cuando algo se ponga difícil, lo resolvamos juntos.",
+      "Y que si algún día lees esto otra vez, sonrías. Porque yo voy a seguir eligiéndote.",
     ],
   },
 
