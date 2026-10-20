@@ -11,13 +11,13 @@ export default {
   // Primera frase, antes de que crezca la primera flor
   frase: "Una vez me pediste algo hecho a mano, con el corazón.",
 
-  // Las 5 flores. Cada una revela un motivo (y una foto opcional).
+  // Las 5 flores. Cada una revela un motivo.
   flores: [
-    { titulo: "Tu risa", texto: "Es mi sonido favorito. Haría lo que fuera por escucharla un día más.", foto: "" },
-    { titulo: "Tu forma de mirarme", texto: "Cuando crees que no me doy cuenta, es cuando más me enamoro de ti.", foto: "" },
-    { titulo: "Tu corazón", texto: "Eres de las personas más bonitas que he conocido, por dentro y por fuera.", foto: "" },
-    { titulo: "Lo fácil que es contigo", texto: "Contigo hasta lo más normal se siente especial.", foto: "" },
-    { titulo: "Que me elijas", texto: "Todos los días. Y yo te elijo a ti.", foto: "" },
+    { titulo: "Tu risa", texto: "Es mi sonido favorito. Haría lo que fuera por escucharla un día más." },
+    { titulo: "Tu forma de mirarme", texto: "Cuando crees que no me doy cuenta, es cuando más me enamoro de ti." },
+    { titulo: "Tu corazón", texto: "Eres de las personas más bonitas que he conocido, por dentro y por fuera." },
+    { titulo: "Lo fácil que es contigo", texto: "Contigo hasta lo más normal se siente especial." },
+    { titulo: "Que me elijas", texto: "Todos los días. Y yo te elijo a ti." },
   ],
 
   // Cuando ya crecieron las 5 flores

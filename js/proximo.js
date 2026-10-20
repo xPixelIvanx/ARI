@@ -154,9 +154,42 @@ const markNext = () => {
 const reason = $("#reason");
 const introLine = $("#intro-line");
 
+// El espacio de arriba mide lo que el texto más largo (frase, motivos o final), para que nunca se encime con las flores.
+function fitIntro() {
+  const top = $(".intro__top");
+  const probe = (node) => {
+    const p = node.cloneNode(true);
+    [p, ...p.querySelectorAll("[id]")].forEach((n) => n.removeAttribute("id"));
+    p.style.cssText = "position:absolute;inset:0 0 auto 0;visibility:hidden;opacity:0;transform:none;transition:none;";
+    top.append(p);
+    return p;
+  };
+  const p = probe(reason);
+  let h = 0;
+  C.flores.forEach((f, i) => {
+    p.querySelector(".reason__num").textContent = `${i + 1} de ${TOTAL}`;
+    p.querySelector(".reason__title").textContent = f.titulo;
+    p.querySelector(".reason__text").textContent = f.texto;
+    h = Math.max(h, p.offsetHeight);
+  });
+  p.remove();
+  for (const node of [introLine, $("#intro-end")]) {
+    const q = probe(node);
+    h = Math.max(h, q.offsetHeight);
+    q.remove();
+  }
+  top.style.minHeight = `${Math.ceil(h) + 12}px`;
+}
+fitIntro();
+document.fonts?.ready.then(fitIntro);
+let fitTimer = 0;
+addEventListener("resize", () => {
+  clearTimeout(fitTimer);
+  fitTimer = setTimeout(fitIntro, 150);
+});
+
 function showReason(n) {
   const r = C.flores[n];
-  $("#reason-photo").replaceChildren(photo(r.foto, r.titulo));
   $("#reason-num").textContent = `${n + 1} de ${TOTAL}`;
   $("#reason-title").textContent = r.titulo;
   $("#reason-text").textContent = r.texto;
@@ -385,10 +418,7 @@ function introPreview() {
   C.flores.forEach((f, i) => {
     const li = el("li", "intro-edit__flower");
     li.dataset.edItem = "";
-    const pic = el("div", "reason__photo");
-    pic.append(photo(f.foto, f.titulo, `flores.${i}.foto`));
     li.append(
-      pic,
       el("p", "reason__num", `Flor ${i + 1} de ${TOTAL}`),
       ed(el("h3", "reason__title", f.titulo), `flores.${i}.titulo`),
       ed(el("p", "reason__text", f.texto), `flores.${i}.texto`),

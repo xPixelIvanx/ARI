@@ -88,7 +88,6 @@ export default {
         fields: [
           { k: "titulo", label: "Título" },
           { k: "texto", label: "Texto", type: "textarea", rows: 3 },
-          { k: "foto", label: "Foto", type: "image" },
         ],
       },
       "promesas.lista": {

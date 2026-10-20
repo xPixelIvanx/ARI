@@ -123,9 +123,9 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 
 .intro__top {
   position: relative;
-  width: min(420px, 100%);
+  width: min(520px, 100%);
   flex: 0 0 auto;
-  min-height: clamp(150px, 26dvh, 230px);
+  min-height: clamp(170px, 28dvh, 260px);
 }
 
 .intro__line,
@@ -156,28 +156,17 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   padding: 0 8px;
   font-family: var(--serif);
   font-style: italic;
-  font-size: clamp(26px, 7vw, 36px);
-  line-height: 1.2;
+  font-size: clamp(32px, 9vw, 46px);
+  line-height: 1.15;
+  text-wrap: balance;
   color: var(--gold-soft);
   text-shadow: 0 0 40px rgba(233, 196, 106, 0.3);
 }
 
 /* Motivo de cada flor */
-.reason__photo {
-  width: clamp(56px, 10dvh, 84px);
-  height: clamp(56px, 10dvh, 84px);
-  border-radius: 50%;
-  overflow: hidden;
-  margin-bottom: 10px;
-  border: 1px solid rgba(233, 196, 106, 0.4);
-  box-shadow: 0 0 30px -8px rgba(233, 196, 106, 0.5);
-}
-
-.reason__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
 .reason__num {
-  margin: 0 0 4px;
-  font-size: 10px;
+  margin: 0 0 8px;
+  font-size: 12px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--gold);
@@ -187,15 +176,18 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   margin: 0 0 6px;
   font-family: var(--serif);
   font-weight: 500;
-  font-size: clamp(26px, 7vw, 32px);
-  line-height: 1.1;
+  font-size: clamp(36px, 10vw, 50px);
+  line-height: 1.05;
+  text-wrap: balance;
+  text-shadow: 0 0 34px rgba(233, 196, 106, 0.25);
 }
 
 .reason__text {
   margin: 0;
-  max-width: 32ch;
-  font-size: 14px;
-  color: var(--text-soft);
+  max-width: 26ch;
+  font-size: clamp(18px, 5vw, 22px);
+  line-height: 1.45;
+  color: rgba(245, 238, 240, 0.8);
   text-wrap: balance;
 }
 
@@ -205,13 +197,13 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   font-family: var(--serif);
   font-style: italic;
   font-weight: 500;
-  font-size: clamp(34px, 9vw, 46px);
-  line-height: 1.05;
+  font-size: clamp(42px, 12vw, 60px);
+  line-height: 1.02;
   color: var(--gold-soft);
   text-shadow: 0 0 40px rgba(233, 196, 106, 0.35);
 }
 
-.intro__end-text { margin: 0; max-width: 28ch; color: var(--text-soft); text-wrap: balance; }
+.intro__end-text { margin: 0; max-width: 24ch; font-size: clamp(18px, 5vw, 22px); line-height: 1.45; color: rgba(245, 238, 240, 0.8); text-wrap: balance; }
 
 /* Placeholder de fotos */
 .ph {
@@ -230,7 +222,6 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 
 .ph svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linejoin: round; }
 .ph span { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; }
-.reason__photo .ph span { display: none; }
 
 /* El ramo (SVG) */
 .garden {
@@ -356,7 +347,7 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .intro__hint {
   margin: 0;
   min-height: 22px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--text-soft);
@@ -668,11 +659,11 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   .hold { width: 64px; height: 64px; }
   .hold__bud { width: 24px; height: 24px; }
   .intro__hint { min-height: 0; }
-  .reason__photo { width: 44px; height: 44px; margin-bottom: 4px; }
-  .reason__title { font-size: clamp(22px, 4vw, 28px); margin-bottom: 2px; }
-  .reason__text { font-size: 13px; }
-  .intro__line { font-size: clamp(22px, 4vw, 32px); }
-  .intro__end-title { font-size: clamp(28px, 5vw, 40px); }
+  .reason__title { font-size: clamp(28px, 5vw, 38px); margin-bottom: 4px; }
+  .reason__text { font-size: clamp(15px, 2.4vw, 18px); }
+  .intro__line { font-size: clamp(26px, 4.6vw, 38px); }
+  .intro__end-title { font-size: clamp(34px, 6vw, 48px); }
+  .intro__end-text { font-size: clamp(15px, 2.4vw, 18px); }
   .hero { padding-top: 70px; padding-bottom: 40px; }
 }
 
