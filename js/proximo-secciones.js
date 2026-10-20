@@ -65,6 +65,24 @@ export function setupSections({ C, EDITING, reduceMotion, el, photo }) {
     const card = el("div", "tl__card glow-card");
     const pic = el("div", "tl__photo");
     pic.append(photo(m.foto, m.titulo, `${base}.foto`));
+    // La foto viene borrosa; "Descubrir" la abre completa en grande (en modo edición se ve normal para poder cambiarla)
+    if (m.foto && !EDITING) {
+      pic.classList.add("is-veiled");
+      const btn = el("button", "tl__reveal");
+      btn.type = "button";
+      btn.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg><span>Descubrir</span>';
+      btn.setAttribute("aria-label", `Ver la foto: ${m.titulo}`);
+      btn.addEventListener("click", () => {
+        const img = pic.querySelector("img");
+        if (!img?.src) return;
+        openPhoto(img, m, () => {
+          pic.classList.replace("is-veiled", "is-open");
+          btn.querySelector("span").textContent = "Ver";
+        });
+      });
+      pic.append(btn);
+    }
     card.append(
       pic,
       ed(el("p", "tl__date", m.fecha), `${base}.fecha`),
@@ -266,6 +284,75 @@ export function setupSections({ C, EDITING, reduceMotion, el, photo }) {
         timer = setTimeout(() => type(), 500);
       }, 0.6),
     );
+  }
+
+  /* ---------- Visor de fotos en grande (fondo borroso) ---------- */
+  let box = null;
+  function openPhoto(thumb, m, onOpen) {
+    if (!box) {
+      box = el("div", "lightbox");
+      box.setAttribute("role", "dialog");
+      box.setAttribute("aria-modal", "true");
+      box.hidden = true;
+      box.innerHTML =
+        '<button type="button" class="lightbox__close" aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
+        '<figure class="lightbox__fig"><img class="lightbox__img" alt="" /><figcaption class="lightbox__cap"><span class="lightbox__date"></span><span class="lightbox__title"></span></figcaption></figure>';
+      document.body.append(box);
+      box.addEventListener("click", (e) => {
+        if (!e.target.closest(".lightbox__img")) box.close();
+      });
+      addEventListener("keydown", (e) => e.key === "Escape" && !box.hidden && box.close());
+    }
+    const img = $(".lightbox__img", box);
+    img.src = thumb.currentSrc || thumb.src;
+    img.alt = m.titulo;
+    $(".lightbox__date", box).textContent = m.fecha;
+    $(".lightbox__title", box).textContent = m.titulo;
+    box.setAttribute("aria-label", m.titulo);
+    const opener = document.activeElement;
+    const before = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    box.hidden = false;
+    void box.offsetWidth;
+    box.classList.add("is-open");
+    $(".lightbox__close", box).focus({ preventScroll: true });
+
+    // La foto sale desde donde estaba en la tarjeta y crece hasta su tamaño completo
+    const fly = (reverse) => {
+      if (reduceMotion || !img.animate) return null;
+      const from = thumb.getBoundingClientRect();
+      const to = img.getBoundingClientRect();
+      if (!to.width || !from.width) return null;
+      const s = Math.max(from.width / to.width, from.height / to.height);
+      const dx = from.left + from.width / 2 - (to.left + to.width / 2);
+      const dy = from.top + from.height / 2 - (to.top + to.height / 2);
+      const frames = [
+        { transform: `translate(${dx}px, ${dy}px) scale(${s})`, filter: "blur(10px)", opacity: 0.6 },
+        { transform: "none", filter: "blur(0)", opacity: 1 },
+      ];
+      return img.animate(reverse ? frames.reverse() : frames, { duration: reverse ? 420 : 620, easing: "cubic-bezier(0.16, 1, 0.3, 1)" });
+    };
+    const start = () => {
+      fly(false);
+      burst(innerWidth / 2, innerHeight / 2, 18, 160);
+      onOpen?.();
+    };
+    img.complete ? start() : img.addEventListener("load", start, { once: true });
+
+    box.close = () => {
+      box.classList.remove("is-open");
+      const anim = fly(true);
+      let closed = false;
+      const done = () => {
+        if (closed) return;
+        closed = true;
+        box.hidden = true;
+        document.body.style.overflow = before;
+        opener?.focus?.({ preventScroll: true });
+      };
+      if (anim) anim.onfinish = done;
+      setTimeout(done, anim ? 480 : reduceMotion ? 0 : 300); // por si la animación no llega a terminar
+    };
   }
 
   /* ---------- Toda la página ---------- */
