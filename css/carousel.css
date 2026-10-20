@@ -423,3 +423,35 @@ body::after {
   .card--soon .card__sheen { animation: none; }
   .btn { transition: none; }
 }
+
+/* ---------- Cuenta regresiva terminada: misma estructura que la tarjeta del regalo ---------- */
+.card__count,
+.card__ready {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.card__count[hidden],
+.card__ready[hidden] { display: none; }
+
+.card__mono--gold {
+  background: linear-gradient(135deg, var(--gold), #E38CA5);
+  color: #14101B;
+  box-shadow: 0 0 0 6px rgba(233, 196, 106, 0.1), 0 0 34px -4px rgba(233, 196, 106, 0.7);
+}
+
+.card--timer.is-ready .card__title { color: var(--text); text-shadow: 0 0 30px rgba(233, 196, 106, 0.3); }
+.card--timer.is-ready .card__ready > * { animation: ready-in 0.9s var(--ease) both; }
+.card--timer.is-ready .card__ready > :nth-child(2) { animation-delay: 0.1s; }
+.card--timer.is-ready .card__ready > :nth-child(3) { animation-delay: 0.2s; }
+.card--timer.is-ready .card__ready > :nth-child(4) { animation-delay: 0.3s; }
+
+@keyframes ready-in {
+  from { opacity: 0; transform: translateY(12px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card--timer.is-ready .card__ready > * { animation: none; }
+}
+.card--timer.is-ready { padding-inline: 24px; } /* mismo margen que la del regalo */

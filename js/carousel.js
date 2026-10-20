@@ -191,7 +191,12 @@ function tick() {
   const ms = PROPUESTA - Date.now();
   if (ms <= 0) {
     ["days", "hours", "mins", "secs"].forEach((k) => setAll(k, "00"));
-    document.querySelectorAll('[data-t="link"]').forEach((el) => (el.hidden = false));
+    // La tarjeta pasa a verse como la del regalo: logo, título, texto y "Abrir"
+    document.querySelectorAll('[data-t="count"]').forEach((el) => (el.hidden = true));
+    document.querySelectorAll('[data-t="ready"]').forEach((el) => {
+      el.hidden = false;
+      el.closest(".card")?.classList.add("is-ready");
+    });
     clearInterval(timerId);
     if (ready) measure(); // el botón nuevo cambia el alto de la tarjeta
     return;

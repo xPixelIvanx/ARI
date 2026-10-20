@@ -37,15 +37,24 @@
         <!-- 2. Cuenta regresiva a la propuesta -->
         <section class="slide" aria-roledescription="diapositiva" aria-label="2 de 3">
           <div class="card card--timer">
-            <p class="card__kicker" data-ed="timer.kicker">Falta</p>
-            <div class="timer" id="timer">
-              <div class="timer__unit"><span id="t-days" data-t="days">--</span><small>días</small></div>
-              <div class="timer__unit"><span id="t-hours" data-t="hours">--</span><small>horas</small></div>
-              <div class="timer__unit"><span id="t-mins" data-t="mins">--</span><small>min</small></div>
-              <div class="timer__unit"><span id="t-secs" data-t="secs">--</span><small>seg</small></div>
+            <!-- Mientras corre el tiempo -->
+            <div class="card__count" data-t="count">
+              <p class="card__kicker" data-ed="timer.kicker">Falta</p>
+              <div class="timer" id="timer">
+                <div class="timer__unit"><span id="t-days" data-t="days">--</span><small>días</small></div>
+                <div class="timer__unit"><span id="t-hours" data-t="hours">--</span><small>horas</small></div>
+                <div class="timer__unit"><span id="t-mins" data-t="mins">--</span><small>min</small></div>
+                <div class="timer__unit"><span id="t-secs" data-t="secs">--</span><small>seg</small></div>
+              </div>
+              <p class="card__text" data-ed="timer.text">para algo que quiero preguntarte.</p>
             </div>
-            <p class="card__text" data-ed="timer.text">para algo que quiero preguntarte.</p>
-            <a class="btn" id="timer-link" data-t="link" href="proximo.html" data-ed="timer.btn" hidden>Abrir</a>
+            <!-- Cuando llega la hora: igual que la tarjeta del regalo (logo, título, texto y "Abrir") -->
+            <div class="card__ready" data-t="ready" hidden>
+              <span class="card__mono card__mono--gold">A</span>
+              <h2 class="card__title" data-ed="timer.readyTitle">Ya es hora</h2>
+              <p class="card__text" data-ed="timer.readyText">Hay algo que quiero preguntarte.</p>
+              <a class="btn" id="timer-link" data-t="link" href="proximo.html" data-ed="timer.btn">Abrir</a>
+            </div>
           </div>
         </section>
 
