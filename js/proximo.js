@@ -48,7 +48,12 @@ const photo = (src, alt = "", path = "") => {
   return ph;
 };
 
+// Textos chiquitos de la intro (se editan en la vista de la intro del modo edición)
+const UI = { hint: "Mantén presionado", otraFlor: "Una flor más", entrar: "Entrar", ...(C.ui || {}) };
+
 $("#intro-line").textContent = C.frase;
+$("#hint").textContent = UI.hint;
+$("#enter").textContent = UI.entrar;
 $("#hero-name").textContent = C.nombre;
 $("#hero-sub").textContent = "Cinco flores, cinco razones y una pregunta.";
 applyStatic(C);
@@ -228,7 +233,7 @@ function bloom() {
   burst(f);
   showReason(current);
   current++;
-  hint.textContent = current < TOTAL ? `Una flor más · ${current} de ${TOTAL}` : "";
+  hint.textContent = current < TOTAL ? `${UI.otraFlor} · ${current} de ${TOTAL}` : "";
   intro.classList.remove("is-holding");
   holdProgress.style.strokeDashoffset = String(RING);
   markNext();
@@ -366,8 +371,49 @@ function celebrate() {
   }
 }
 
+// Modo edición: la intro (que es una capa encima de todo) se muestra arriba de la página como tarjetas editables.
+function introPreview() {
+  const ed = (node, path) => ((node.dataset.ed = path), node);
+  const box = el("div", "intro-edit");
+  box.append(
+    el("p", "intro-edit__tag", "La intro · así se edita (ella la ve con el ramo)"),
+    ed(el("p", "intro-edit__line", C.frase), "frase"),
+    ed(el("p", "intro-edit__small", UI.hint), "ui.hint"),
+  );
+  const list = el("ol", "intro-edit__flowers");
+  list.dataset.edList = "flores";
+  C.flores.forEach((f, i) => {
+    const li = el("li", "intro-edit__flower");
+    li.dataset.edItem = "";
+    const pic = el("div", "reason__photo");
+    pic.append(photo(f.foto, f.titulo, `flores.${i}.foto`));
+    li.append(
+      pic,
+      el("p", "reason__num", `Flor ${i + 1} de ${TOTAL}`),
+      ed(el("h3", "reason__title", f.titulo), `flores.${i}.titulo`),
+      ed(el("p", "reason__text", f.texto), `flores.${i}.texto`),
+    );
+    list.append(li);
+  });
+  const end = el("div", "intro-edit__end");
+  const title = el("h3", "intro__end-title");
+  title.append(ed(el("span", "", C.ramo.titulo), "ramo.titulo"), el("span", "", `, ${C.nombre}`));
+  end.append(
+    el("p", "intro-edit__tag", "Al terminar las 5 flores"),
+    title,
+    ed(el("p", "intro__end-text", C.ramo.texto), "ramo.texto"),
+    el("p", "intro-edit__small", "Entre flor y flor dice:"),
+    ed(el("p", "intro-edit__small intro-edit__strong", UI.otraFlor), "ui.otraFlor"),
+    el("p", "intro-edit__small", "Botón para entrar:"),
+    ed(el("p", "enter intro-edit__enter", UI.entrar), "ui.entrar"),
+  );
+  box.append(list, end);
+  page.prepend(box);
+}
+
 // Modo edición (solo cuenta admin): se salta el ramo de flores y deja todo a la vista.
 if (EDITING) {
+  introPreview();
   finished = true;
   enterPage({ playMusic: false });
   intro.hidden = true;

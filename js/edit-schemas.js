@@ -127,7 +127,7 @@ export default {
           { k: "texto", label: "Detalle (opcional)" },
         ],
       },
-      "futuro.carta": { label: "párrafo", new: "Escribe aquí.", rows: 3 },
+      "futuro.carta": { label: "párrafo", new: "Escribe aquí.", rows: 6 },
     },
     settings: [
       {

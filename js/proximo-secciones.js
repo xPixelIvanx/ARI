@@ -214,6 +214,10 @@ export function setupSections({ C, EDITING, reduceMotion, el, photo }) {
     $("#future-lines").append(p);
     return { p, t };
   });
+  // Si la carta es larga, la letra se ajusta para que sea cómoda de leer (ver css: is-long / is-xlong)
+  const total = lines.reduce((n, l) => n + l.t.length, 0);
+  future.classList.toggle("is-long", total > 480);
+  future.classList.toggle("is-xlong", total > 1200);
   if (still) future.classList.add("is-done");
   else {
     // Cada renglón ya ocupa su lugar (texto invisible) para que nada salte mientras se escribe
@@ -224,6 +228,11 @@ export function setupSections({ C, EDITING, reduceMotion, el, photo }) {
       l.rest = el("span", "future__rest", l.t);
       l.p.replaceChildren(l.typed, l.rest);
     });
+    // Mientras más larga, más rápido se escribe (unos 20 s como mucho) y se puede tocar para verla completa
+    const base = clamp(18000 / Math.max(total, 1), 6, 42);
+    const step = Math.max(1, Math.round(total / 2600));
+    const skipHint = el("p", "future__skip", "Toca para leerla completa");
+    if (total > 300) future.insertBefore(skipHint, sign);
     let timer = 0;
     let skip = false;
     const finish = () => {
@@ -233,26 +242,29 @@ export function setupSections({ C, EDITING, reduceMotion, el, photo }) {
         l.rest.textContent = "";
       });
       caret.remove();
+      skipHint.remove();
       future.classList.add("is-done");
     };
     const type = (li = 0, ci = 0) => {
       const l = lines[li];
       if (!l || skip) return finish();
       if (ci === 0) l.p.insertBefore(caret, l.rest);
-      l.typed.textContent = l.t.slice(0, ci + 1);
-      l.rest.textContent = l.t.slice(ci + 1);
-      const ch = l.t[ci];
-      if (ci + 1 >= l.t.length) timer = setTimeout(() => type(li + 1, 0), 650);
-      else timer = setTimeout(() => type(li, ci + 1), /[.,;:!?…]/.test(ch) ? 260 : 26 + Math.random() * 34);
+      const upto = Math.min(l.t.length, ci + step);
+      l.typed.textContent = l.t.slice(0, upto);
+      l.rest.textContent = l.t.slice(upto);
+      const ch = l.t[upto - 1];
+      if (upto >= l.t.length) timer = setTimeout(() => type(li + 1, 0), clamp(base * 16, 250, 650));
+      else timer = setTimeout(() => type(li, upto), /[.,;:!?…]/.test(ch) ? Math.min(260, base * 7) : base * (0.6 + Math.random() * 0.8));
     };
     future.addEventListener("click", () => {
       if (!future.classList.contains("is-done") && future.classList.contains("is-typing")) skip = true;
     });
+    // Empieza cuando el primer renglón está a la vista (aunque la carta sea más alta que la pantalla)
     starters.push(() =>
-      onView(future, () => {
+      onView(lines[0]?.p || future, () => {
         future.classList.add("is-typing");
         timer = setTimeout(() => type(), 500);
-      }, 0.5),
+      }, 0.6),
     );
   }
 

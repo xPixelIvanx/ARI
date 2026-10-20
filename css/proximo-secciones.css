@@ -402,9 +402,10 @@ body.is-locked .progress { opacity: 0; }
 /* ---------- Carta al futuro ---------- */
 .future {
   position: relative;
-  max-width: 560px;
+  width: 100%;
+  max-width: 600px;
   margin: 0 auto;
-  padding: clamp(28px, 7vw, 48px) clamp(22px, 6vw, 44px);
+  padding: clamp(24px, 6.5vw, 52px) clamp(18px, 5.5vw, 52px);
   border-radius: 24px;
   background: linear-gradient(170deg, rgba(243, 223, 166, 0.08), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(233, 196, 106, 0.28);
@@ -412,7 +413,53 @@ body.is-locked .progress { opacity: 0; }
 }
 .future.is-typing:not(.is-done) { cursor: pointer; }
 
-.future__line { margin: 0 0 16px; font-family: var(--serif); font-style: italic; font-size: clamp(22px, 5.8vw, 27px); line-height: 1.42; }
+.future__line {
+  margin: 0 0 0.75em;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(20px, 5.4vw, 26px);
+  line-height: 1.45;
+  white-space: pre-line; /* respeta los saltos de línea que escribas */
+  overflow-wrap: break-word;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  text-wrap: pretty;
+}
+.future__line:last-child { margin-bottom: 0; }
+
+/* Carta larga: letra un poco más chica y renglones más aireados */
+.future.is-long { max-width: 660px; }
+.future.is-long .future__line { font-size: clamp(18px, 4.7vw, 22px); line-height: 1.6; }
+
+/* Carta muy larga: letra derecha (más fácil de leer en bloque) y ancho de lectura cómodo */
+.future.is-xlong { max-width: 700px; }
+.future.is-xlong .future__line { font-style: normal; font-size: clamp(17px, 4.4vw, 20px); line-height: 1.68; }
+
+@media (max-width: 360px) {
+  .future { border-radius: 18px; }
+  .future__line,
+  .future.is-long .future__line,
+  .future.is-xlong .future__line { font-size: 17px; }
+}
+
+/* Celular acostado: un poco más compacto */
+@media (orientation: landscape) and (max-height: 520px) {
+  .future__line { font-size: 19px; line-height: 1.5; }
+  .future.is-xlong .future__line { font-size: 17px; }
+}
+
+.future__skip {
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.future.is-typing .future__skip { opacity: 0.8; }
+
 .future__rest { color: transparent; }
 
 .caret {
@@ -432,7 +479,7 @@ body.is-locked .progress { opacity: 0; }
   text-align: right;
   font-family: var(--serif);
   font-style: italic;
-  font-size: 30px;
+  font-size: clamp(24px, 6.4vw, 30px);
   color: var(--gold);
   text-shadow: 0 0 20px rgba(233, 196, 106, 0.5);
   opacity: 0;
@@ -451,3 +498,53 @@ body.is-locked .progress { opacity: 0; }
   .tl-end__line,
   .future__sign { transition-duration: 0.01s; transition-delay: 0s; }
 }
+
+/* ---------- Modo edición: la intro como tarjetas editables ---------- */
+.intro-edit {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 96px max(var(--gutter), env(safe-area-inset-right)) 40px max(var(--gutter), env(safe-area-inset-left));
+  text-align: center;
+}
+.intro-edit__tag {
+  display: inline-block;
+  margin: 0 0 18px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px dashed rgba(233, 196, 106, 0.5);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.intro-edit__line {
+  margin: 0 auto 10px;
+  max-width: 22ch;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(26px, 7vw, 36px);
+  line-height: 1.2;
+  color: var(--gold-soft);
+}
+.intro-edit__small { margin: 0 0 6px; font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-soft); }
+.intro-edit__strong { color: var(--gold-soft); }
+.intro-edit__flowers {
+  list-style: none;
+  margin: 30px 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 12px;
+}
+.intro-edit__flower {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(233, 196, 106, 0.22);
+}
+.intro-edit__end { padding: 28px 0 0; border-top: 1px dashed rgba(233, 196, 106, 0.3); }
+.intro-edit__end .intro__end-text { margin: 0 auto 22px; }
+.intro-edit__enter { display: inline-block; margin: 4px 0 0; animation: none; cursor: text; }
