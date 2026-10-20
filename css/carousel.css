@@ -436,9 +436,9 @@ body::after {
 .card__ready[hidden] { display: none; }
 
 .card__mono--gold {
-  background: linear-gradient(135deg, var(--gold), #E38CA5);
-  color: #14101B;
-  box-shadow: 0 0 0 6px rgba(233, 196, 106, 0.1), 0 0 34px -4px rgba(233, 196, 106, 0.7);
+  background: radial-gradient(circle at 50% 35%, #2C2238, #14101B 75%);
+  border: 1px solid rgba(233, 196, 106, 0.6);
+  box-shadow: 0 0 0 6px rgba(233, 196, 106, 0.08), 0 0 34px -4px rgba(233, 196, 106, 0.6);
 }
 
 .card--timer.is-ready .card__title { color: var(--text); text-shadow: 0 0 30px rgba(233, 196, 106, 0.3); }
@@ -455,3 +455,17 @@ body::after {
   .card--timer.is-ready .card__ready > * { animation: none; }
 }
 .card--timer.is-ready { padding-inline: 24px; } /* mismo margen que la del regalo */
+
+/* La flor del logo (como las flores amarillas del ramo) */
+.card__flower { width: 70%; height: 70%; overflow: visible; animation: flower-sway 6s ease-in-out infinite alternate; }
+.card__petals { fill: url(#ready-petal); filter: drop-shadow(0 0 3px rgba(242, 183, 5, 0.6)); }
+.card__flower-core { fill: url(#ready-core); }
+
+@keyframes flower-sway {
+  from { transform: rotate(-8deg); }
+  to { transform: rotate(8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card__flower { animation: none; }
+}
