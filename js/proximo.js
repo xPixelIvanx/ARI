@@ -375,17 +375,20 @@ noBtn.addEventListener("click", () => {
   yesBtn.style.transform = `scale(${1 + noClicks * 0.12})`; // el Sí crece con cada "No"
 });
 
+// Lo que aparece después del "Sí" (ya escrito desde el inicio para que el modo edición lo pueda mostrar)
+$("#answer-big").textContent = C.respuesta.grande;
+$("#answer-text").textContent = C.respuesta.texto;
+$("#answer-extra").textContent = C.respuesta.extra;
+$("#sign").textContent = C.firma;
+
 yesBtn.addEventListener("click", () => {
+  if (EDITING) return; // en modo edición la respuesta ya está a la vista
   dispatchEvent(new CustomEvent("ari:action", { detail: { name: "proximo_si" } }));
   $("#scratch").hidden = true;
   $("#scratch-hint").hidden = true;
   $("#ask-kicker").hidden = true;
   $("#ask-question").hidden = true;
   $("#choices").hidden = true;
-  $("#answer-big").textContent = C.respuesta.grande;
-  $("#answer-text").textContent = C.respuesta.texto;
-  $("#answer-extra").textContent = C.respuesta.extra;
-  $("#sign").textContent = C.firma;
   $("#answer").hidden = false;
   $("#answer").scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
   celebrate();
@@ -444,6 +447,11 @@ function introPreview() {
 // Modo edición (solo cuenta admin): se salta el ramo de flores y deja todo a la vista.
 if (EDITING) {
   introPreview();
+  // La respuesta del "Sí" se muestra debajo de los botones, marcada como vista previa, para poder editarla.
+  const answer = $("#answer");
+  answer.hidden = false;
+  answer.classList.add("is-preview");
+  answer.prepend(el("p", "intro-edit__tag", "Después del “Sí” · así lo verá ella"));
   finished = true;
   enterPage({ playMusic: false });
   intro.hidden = true;

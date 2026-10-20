@@ -666,3 +666,13 @@ body.is-locked .progress { opacity: 0; }
   .lightbox,
   .lightbox__cap { transition-duration: 0.01s; }
 }
+
+/* Modo edición: la respuesta del "Sí" a la vista, debajo de los botones */
+.ask__answer.is-preview {
+  width: min(560px, 100%);
+  margin-top: 24px;
+  padding: 26px 20px;
+  border-radius: 22px;
+  border: 1px dashed rgba(233, 196, 106, 0.45);
+  animation: none;
+}
