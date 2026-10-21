@@ -1,10 +1,10 @@
 import { applyStatic, loadContent, markRendered } from "./content.js";
 
 // Textos y fecha editables por la cuenta admin (modo edición); si no hay nada publicado se usa lo escrito aquí.
-const CONTENT = await loadContent({ propuesta: "2026-10-21T15:30:00", wrapped: "2027-01-01T00:00:00" }, "index");
+const CONTENT = await loadContent({ propuesta: "2026-10-23T11:00:00", wrapped: "2027-01-01T00:00:00" }, "index");
 applyStatic(CONTENT);
 
-// Fecha de la propuesta: miércoles 21 de octubre de 2026, 3:30 pm (hora local del dispositivo).
+// Fecha de la propuesta: viernes 23 de octubre de 2026, 11:00 am (hora local del dispositivo).
 const PROPUESTA = new Date(CONTENT.propuesta);
 
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
