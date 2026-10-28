@@ -172,7 +172,6 @@ export default {
   index: {
     lists: {},
     settings: [
-      { title: "Cuenta regresiva", fields: [{ path: "propuesta", label: "Fecha y hora de la propuesta", type: "datetime" }] },
       { title: "Wrapped", fields: [{ path: "wrapped", label: "Cuándo se abre el Wrapped", type: "datetime" }] },
     ],
   },

@@ -6,8 +6,8 @@ import { setupSections } from "./proximo-secciones.js";
 
 const C = await loadContent(DEFAULTS, "proximo");
 const EDITING = editMode(); // modo edición de la cuenta admin (js/edit.js)
-// Misma fecha que la cuenta regresiva del carrusel (js/carousel.js), editable desde el modo edición del carrusel
-const PROPUESTA = new Date((await loadContent({ propuesta: "2026-11-04T11:00:00" }, "index")).propuesta);
+// Misma fecha fija que la cuenta regresiva del carrusel (js/carousel.js): miércoles 4 de noviembre de 2026, 11:00 am
+const PROPUESTA = new Date("2026-11-04T11:00:00");
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;

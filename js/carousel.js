@@ -5,7 +5,8 @@ const CONTENT = await loadContent({ propuesta: "2026-11-04T11:00:00", wrapped: "
 applyStatic(CONTENT);
 
 // Fecha de la propuesta: miércoles 4 de noviembre de 2026, 11:00 am (hora local del dispositivo).
-const PROPUESTA = new Date(CONTENT.propuesta);
+// Fija aquí (y en js/proximo.js): no se toma la fecha publicada en el modo edición.
+const PROPUESTA = new Date("2026-11-04T11:00:00");
 
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
