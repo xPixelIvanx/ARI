@@ -6,6 +6,8 @@ import { setupSections } from "./proximo-secciones.js";
 
 const C = await loadContent(DEFAULTS, "proximo");
 const EDITING = editMode(); // modo edición de la cuenta admin (js/edit.js)
+// Misma fecha que la cuenta regresiva del carrusel (js/carousel.js), editable desde el modo edición del carrusel
+const PROPUESTA = new Date((await loadContent({ propuesta: "2026-11-04T11:00:00" }, "index")).propuesta);
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -18,6 +20,28 @@ const hint = $("#hint");
 const enterBtn = $("#enter");
 const page = $("#page");
 const music = createMusic($("#music"));
+
+// ---------- Bloqueo hasta la propuesta ----------
+// Antes de la hora solo se ve la fecha y la cuenta regresiva. El admin en modo edición entra igual.
+if (!EDITING && Date.now() < PROPUESTA) showLocked();
+
+function showLocked() {
+  intro.style.display = "none";
+  page.style.display = "none";
+  $("#locked").hidden = false;
+  $("#locked-date").textContent = `${PROPUESTA.toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}, ${PROPUESTA.toLocaleTimeString("es", { hour: "numeric", minute: "2-digit" })}`;
+  const count = $("#locked-count");
+  const tick = () => {
+    const ms = PROPUESTA - Date.now();
+    if (ms <= 0) return location.reload(); // ya es la hora: carga la página normal
+    const total = Math.floor(ms / 1000);
+    const days = Math.floor(total / 86400);
+    const hms = [Math.floor((total % 86400) / 3600), Math.floor((total % 3600) / 60), total % 60].map((v) => String(v).padStart(2, "0")).join(":");
+    count.textContent = `${days} ${days === 1 ? "día" : "días"} · ${hms}`;
+  };
+  tick();
+  setInterval(tick, 1000);
+}
 
 const HOLD_MS = 1300; // cuánto hay que mantener presionado para que florezca
 const DECAY_MS = 700; // qué tan rápido se encoge si sueltas antes

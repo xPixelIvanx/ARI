@@ -58,6 +58,15 @@
     </div>
   </section>
 
+  <!-- Bloqueada hasta la fecha de la propuesta (js/proximo.js muestra esto si todavía no es la hora) -->
+  <section class="locked" id="locked" aria-live="polite" hidden>
+    <p class="locked__kicker">Todavía no</p>
+    <h1 class="locked__title">Esta página se abre el</h1>
+    <p class="locked__date" id="locked-date"></p>
+    <div class="locked__count" id="locked-count"></div>
+    <a class="locked__back" href="index.html">Volver</a>
+  </section>
+
   <!-- Contenido: se desbloquea al entrar -->
   <main class="page" id="page" inert data-ed-root>
     <header class="hero">

@@ -121,6 +121,19 @@ a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 
 .intro.is-out { opacity: 0; visibility: hidden; pointer-events: none; }
 
+/* Pantalla bloqueada hasta la fecha de la propuesta (js/proximo.js) */
+.locked {
+  min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 24px 16px; text-align: center; color: var(--text);
+}
+.locked[hidden] { display: none; }
+.locked__kicker { margin: 0; font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); }
+.locked__title { margin: 0; font: 500 clamp(26px, 7vw, 38px)/1.15 var(--serif); }
+.locked__date { margin: 0; font: 500 clamp(20px, 5.5vw, 26px)/1.3 var(--serif); color: var(--gold-soft); text-shadow: 0 0 24px rgba(233, 196, 106, 0.35); }
+.locked__count { margin-top: 6px; font-size: 15px; letter-spacing: 0.08em; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.locked__back { margin-top: 18px; font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-soft); text-decoration: none; }
+.locked__back:hover { color: var(--gold-soft); }
+
 .intro__top {
   position: relative;
   width: min(520px, 100%);

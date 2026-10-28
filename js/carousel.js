@@ -187,6 +187,9 @@ const setAll = (key, text) =>
 let timerId = null;
 let ready = false; // el carrusel ya se midió
 
+// Fecha completa, p. ej. "miércoles, 4 de noviembre, 11:00 a. m."
+setAll("date", `${PROPUESTA.toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })}, ${PROPUESTA.toLocaleTimeString("es", { hour: "numeric", minute: "2-digit" })}`);
+
 function tick() {
   const ms = PROPUESTA - Date.now();
   if (ms <= 0) {
